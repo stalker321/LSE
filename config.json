@@ -1,0 +1,8 @@
+{
+  "config": {
+  "name": "FinalProject",
+  "version": "0.0.1",
+  "max_responses": 5
+  },
+  "files":  "./resources/"
+}

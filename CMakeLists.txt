@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Concurrent)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(nlohmann_json)
@@ -29,4 +30,5 @@ add_executable(FinalProject
 
 
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Concurrent)
 target_link_libraries(FinalProject PRIVATE nlohmann_json::nlohmann_json)

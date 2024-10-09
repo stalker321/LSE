@@ -22,12 +22,15 @@ add_subdirectory(WI)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.json ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ErrorLog.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/requests.json ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 add_executable(FinalProject
   main.cpp
   WorkingWithJson.h
   startsearch.h
   startsearch.cpp
+  errormessage.h
+  errormessage.cpp
 )
 
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Core)

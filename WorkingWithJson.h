@@ -8,6 +8,7 @@
 #include <QVector>
 #include <filesystem>
 #include <QtConcurrent>
+#include "errormessage.h"
 
 #include "nlohmann/json.hpp"
 #include "WI/word_indexing.h"
@@ -16,6 +17,7 @@
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
+
 
 //functions for multithreading
 json docIndexing (QString path, int id) {
@@ -26,13 +28,13 @@ json docIndexing (QString path, int id) {
     QFile resursec (path);
     if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
         resursec.close();
+        errorLog("File reading error " + path, false);
         return "";
     }
 
     QString text = resursec.readAll();
     resursec.close();
     text = text.toLower();
-    qDebug() << text;
     QHash<QString, int> word (WI::indexing_word(text, 1));
     for (auto i = word.begin(), end = word.end(); i != end; i++){
         indexing["index"][i.key().toStdString()] = i.value();
@@ -41,19 +43,10 @@ json docIndexing (QString path, int id) {
 }
 //FfM end
 
-class SearchEngine {
-public:
-    ~SearchEngine();
-private:
-};
-
-SearchEngine::~SearchEngine() {
-
-}
-
 class DocumentBase {
 public:
     DocumentBase (QString& path, QVector<QString>& format) {
+        if (path.size() < 1) errorLog("Incorrect file path", true);
         fs::path directory (path.toStdString());
         QVector<QString> paths = search_extension(directory, format);
 
@@ -70,7 +63,6 @@ public:
             fileIndex["resources"][counter] = i.result();
             counter++;
         }
-        qInfo() << to_string(fileIndex).c_str();
     }
 
     //collect files using the specified path
@@ -92,10 +84,41 @@ public:
         }
     }
 
-private:
-    json fileIndex;
 protected:
+    json fileIndex;
 
 };
+
+class SearchEngine : protected DocumentBase {
+public:
+    ~SearchEngine();
+    SearchEngine (QString& rPath, QString& path, QVector<QString>& format): DocumentBase(path, format){
+        requests << requestGeneration(rPath);
+    }
+
+    QVector<QString> requestGeneration (QString& path) {
+        QFile reqFile(path);
+        if (!reqFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            errorLog("Search query file error", true);
+        }
+        json reqJson = json::parse(reqFile.readAll());
+        if (reqJson["requests"].size() < 1) errorLog("The search query file is empty", true);
+
+        QVector<QString> answer;
+        for (auto &r : reqJson["requests"]){
+            answer.append(QString::fromStdString(r));
+        }
+
+        return answer;
+    }
+
+private:
+    QVector<QString> requests;
+};
+
+SearchEngine::~SearchEngine() {
+
+}
+
 
 #endif // WORKINGWITHJSON_H

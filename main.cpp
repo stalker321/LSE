@@ -11,11 +11,6 @@ QString version               ("0.0.3");
 
 json search_query (QString& path);
 
-void data_output (QString &req, json &database_index) {
-    SearchServer* search = new SearchServer(req, database_index);
-    delete(search);
-}
-
 int main(){
     QTextCodec *codec = QTextCodec::codecForName("UTF-8");
     QTextCodec::setCodecForLocale(codec);
@@ -26,13 +21,14 @@ int main(){
     QList<QFuture<void>> multiple_search;
 
     for (int i = 0; i < query["requests"].size(); i++) {
-        multiple_search.append(QtConcurrent::run(data_output,
-                               QString::fromStdString(query["requests"][i]),
-                               search_archive->get_fileIndex()));
+        multiple_search.append(QtConcurrent::run(
+                MainEngine::data_output, QString::fromStdString(query["requests"][i]),
+                search_archive->get_fileIndex()));
     }
 
     for (auto i : multiple_search) i.waitForFinished();
 
+    //delete
     delete (search_archive);
 }
 

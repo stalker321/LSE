@@ -111,6 +111,10 @@ public:
 
 class MainEngine {
 public:
+    static void data_output (QString &req, json &database_index) {
+        SearchServer* search = new SearchServer(req, database_index);
+        delete(search);
+    }
 
 private:
 };

@@ -1,11 +1,13 @@
 #ifndef WORKINGWITHJSON_H
 #define WORKINGWITHJSON_H
+#include <QMap>
 #include <QFile>
 #include <QList>
 #include <QHash>
 #include <QDebug>
 #include <QFuture>
 #include <QVector>
+#include <QMultiMap>
 #include <filesystem>
 #include <QtConcurrent>
 #include "errormessage.h"
@@ -41,8 +43,10 @@ json docIndexing (QString path, int id) {
     }
     return indexing;
 }
+
 //FfM end
 
+//database in json format
 class DocumentBase {
 public:
     DocumentBase (QString& path, QVector<QString>& format) {
@@ -84,41 +88,31 @@ public:
         }
     }
 
+    json get_fileIndex () {
+        return fileIndex;
+    }
+
 protected:
     json fileIndex;
 
 };
 
-class SearchEngine : protected DocumentBase {
+class SearchServer {
 public:
-    ~SearchEngine();
-    SearchEngine (QString& rPath, QString& path, QVector<QString>& format): DocumentBase(path, format){
-        requests << requestGeneration(rPath);
-    }
-
-    QVector<QString> requestGeneration (QString& path) {
-        QFile reqFile(path);
-        if (!reqFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            errorLog("Search query file error", true);
+    SearchServer (QString req, json database_index) {
+        auto temp = WI::indexing_word(req, 1);
+        QMultiMap<int, QString> req_index;
+        for (auto i = temp.begin(), end = temp.end(); i != end; i++){
+            req_index.insert(i.value(), i.key().toLower());
         }
-        json reqJson = json::parse(reqFile.readAll());
-        if (reqJson["requests"].size() < 1) errorLog("The search query file is empty", true);
-
-        QVector<QString> answer;
-        for (auto &r : reqJson["requests"]){
-            answer.append(QString::fromStdString(r));
-        }
-
-        return answer;
+        qDebug() << req_index;
     }
-
-private:
-    QVector<QString> requests;
 };
 
-SearchEngine::~SearchEngine() {
+class MainEngine {
+public:
 
-}
-
+private:
+};
 
 #endif // WORKINGWITHJSON_H

@@ -6,8 +6,7 @@
 #include "errormessage.h"
 
 
-
-QString configCheck (QString config, QString currentVersion) {
+json configCheck (QString config, QString currentVersion) {
     QFile fileConfig (config);
     if (!fileConfig.open(QIODevice::ReadOnly | QIODevice::Text)) {
         fileConfig.close();
@@ -21,7 +20,7 @@ QString configCheck (QString config, QString currentVersion) {
     }
 
     fileConfig.close();
-    return QString::fromStdString(configJson["files"]);
+    return configJson;
 }
 
 json search_query (QString& path) {

@@ -22,6 +22,8 @@
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
+QVector<QString> stop_word;
+
 //database in json format
 class DocumentBase {
 public:
@@ -65,14 +67,14 @@ public:
             }
             counter++;
         }
-        qDebug() << to_string(fileIndex["index"]).c_str();
-        qDebug() << to_string(fileIndex["address"]).c_str();
+//        qDebug() << to_string(fileIndex["index"]).c_str();
+//        qDebug() << to_string(fileIndex["address"]).c_str();
     }
 
     //collect files using the specified path
     QVector<QString> search_extension (fs::path& dir, QVector<QString>& ext) {
         QVector<QString> paths;
-        for (const fs::directory_entry& p : fs::directory_iterator(dir)) {
+        for (const fs::directory_entry& p : fs::directory_iterator(dir)){
             if (!fs::is_regular_file(p.status())) continue;
             filePath(p, ext, paths);
         }
@@ -105,7 +107,7 @@ public:
 
         QString text = resursec.readAll();
         resursec.close();
-        QHash<QString, int> word (WI::indexing_word(text, 1));
+        QHash<QString, int> word (WI::indexing_word(text, stop_word));
         for (auto i = word.begin(), end = word.end(); i != end; i++){
             indexing["index"][i.key().toStdString()] = i.value();
         }
@@ -123,7 +125,7 @@ public:
             info = info.toLower();
             resursec.close();
             std::list<std::string> answer;
-            index = (WI::unique_words(info, index, 1));
+            index = (WI::unique_words(info, index, stop_word));
             return;
     };
 
@@ -136,7 +138,7 @@ protected:
 class SearchServer {
 public:
     SearchServer (QString& req, json &database_index) {
-        auto temp = WI::indexing_word(req, 1);
+        auto temp = WI::indexing_word(req, stop_word);
         QMultiMap<int, QString> req_index;
         for (auto i = temp.begin(), end = temp.end(); i != end; i++){
             req_index.insert(i.value(), i.key());

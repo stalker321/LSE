@@ -31,13 +31,31 @@ namespace WI {
         return answer;
     }
 
+    QList<QString> unique_words (QString &resources, QList<QString> word_list) {
+        QRegExp reg("[\\s|\\n|\\r|\\.|,|!|\\?|:|;|«|»|-]+");
+        QString work = resources.toLower();
+        for (auto &s : work.split(reg, QString::SkipEmptyParts)) {
+            if (!word_list.contains(s)) word_list.append(s);
+        }
+        return word_list;
+    }
+
+    QList<QString> unique_words (QString &resources, QList<QString> word_list, int minSize) {
+        QRegExp reg("[\\s|\\n|\\r|\\.|,|!|\\?|:|;|«|»|-]+");
+        QString work = resources.toLower();
+        for (auto &s : work.split(reg, QString::SkipEmptyParts)) {
+            if (!(word_list.contains(s)) && s.size() > minSize) word_list.append(s);
+        }
+        return word_list;
+    }
+
     QHash<QString, int> indexing_word (QString& resources, int minSize) {
         QTextCodec *codec = QTextCodec::codecForName("UTF-8");
         QTextCodec::setCodecForLocale(codec);
         QRegExp reg("[\\s|\\n|\\r|\\.|,|!|\\?|:|;|«|»|-]+");
         QHash<QString, int> answer;
         for (auto &t : resources.split(reg, QString::SkipEmptyParts)) {
-            if (t.size() > minSize) answer[t]++;
+            if (t.size() > minSize) answer[t.toLower()]++;
         }
         return answer;
     }

@@ -5,9 +5,7 @@
 #include "startsearch.h"
 #include "errormessage.h"
 
-#include "nlohmann/json.hpp"
 
-using json = nlohmann::json;
 
 QString configCheck (QString config, QString currentVersion) {
     QFile fileConfig (config);
@@ -24,4 +22,16 @@ QString configCheck (QString config, QString currentVersion) {
 
     fileConfig.close();
     return QString::fromStdString(configJson["files"]);
+}
+
+json search_query (QString& path) {
+    QFile reqFile(path);
+    if (!reqFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        reqFile.close();
+        errorLog("Search query file error", true);
+    }
+    json reqJson = json::parse(reqFile.readAll());
+    reqFile.close();
+    if (reqJson["requests"].size() < 1) errorLog("The search query file is empty", true);
+    return reqJson;
 }

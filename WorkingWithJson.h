@@ -16,35 +16,11 @@
 #include "WI/word_indexing.h"
 
 #include <iostream>
+#include <list>
+#include <string>
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
-
-
-//functions for multithreading
-json docIndexing (QString path, int id) {
-    json indexing;
-    indexing["id"] = id;
-    indexing["address"] = path.toStdString();
-
-    QFile resursec (path);
-    if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
-        resursec.close();
-        errorLog("File reading error " + path, false);
-        return "";
-    }
-
-    QString text = resursec.readAll();
-    resursec.close();
-    text = text.toLower();
-    QHash<QString, int> word (WI::indexing_word(text, 1));
-    for (auto i = word.begin(), end = word.end(); i != end; i++){
-        indexing["index"][i.key().toStdString()] = i.value();
-    }
-    return indexing;
-}
-
-//FfM end
 
 //database in json format
 class DocumentBase {
@@ -53,20 +29,44 @@ public:
         if (path.size() < 1) errorLog("Incorrect file path", true);
         fs::path directory (path.toStdString());
         QVector<QString> paths = search_extension(directory, format);
+        QList<QString> index;
+        int counter = 0;
+        //collecting unique words
+        for (auto &i : paths) {
+            uniqueWords(i, index);
+        }
+        for (auto &i : index) fileIndex["index"][i.toStdString()].push_back(0);
 
         //collecting the json search file
-        int counter = 0;
         QList<QFuture<json>> informationResource;
         for (auto &p : paths) {
-            informationResource.append(QtConcurrent::run(docIndexing, p, counter));
-            counter++;
+            informationResource.append(QtConcurrent::run(docIndexing, p));
         }
-        counter = 0;
         for (auto &w : informationResource) w.waitForFinished();
         for (auto &i : informationResource) {
-            fileIndex["resources"][counter] = i.result();
+            fileIndex["address"].push_back(i.result()["address"]);
+
+            json temp = i.result()["index"];
+            for (auto t = temp.begin(); t != temp.end(); t++) {
+                if (counter == 0) {
+                     fileIndex["index"][t.key()][counter] = (t.value());
+                } else {
+                    fileIndex["index"][t.key()].push_back(t.value());
+                }
+            }
+
+            if (counter == 0) {
+                counter++;
+                continue;
+            }
+
+            for (auto &t : fileIndex["index"]){
+                if (t[counter].empty()) t[counter] = 0;
+            }
             counter++;
         }
+        qDebug() << to_string(fileIndex["index"]).c_str();
+        qDebug() << to_string(fileIndex["address"]).c_str();
     }
 
     //collect files using the specified path
@@ -88,9 +88,45 @@ public:
         }
     }
 
-    json get_fileIndex () {
+    const json &get_fileIndex () {
         return fileIndex;
     }
+
+    //functions for multithreading
+    static json docIndexing (QString path) {
+        json indexing;
+        indexing["address"] = path.toStdString();
+
+        QFile resursec (path);
+        if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
+            resursec.close();
+            errorLog("File reading error " + path, true);
+        }
+
+        QString text = resursec.readAll();
+        resursec.close();
+        QHash<QString, int> word (WI::indexing_word(text, 1));
+        for (auto i = word.begin(), end = word.end(); i != end; i++){
+            indexing["index"][i.key().toStdString()] = i.value();
+        }
+        return indexing;
+    }
+
+    static void uniqueWords (QString& path, QList<QString>& index) {
+            QFile resursec (path);
+            if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
+                resursec.close();
+                errorLog("File reading error " + path, true);
+            }
+
+            QString info = resursec.readAll();
+            info = info.toLower();
+            resursec.close();
+            std::list<std::string> answer;
+            index = (WI::unique_words(info, index, 1));
+            return;
+    };
+
 
 protected:
     json fileIndex;
@@ -99,23 +135,22 @@ protected:
 
 class SearchServer {
 public:
-    SearchServer (QString req, json database_index) {
+    SearchServer (QString& req, json &database_index) {
         auto temp = WI::indexing_word(req, 1);
         QMultiMap<int, QString> req_index;
         for (auto i = temp.begin(), end = temp.end(); i != end; i++){
-            req_index.insert(i.value(), i.key().toLower());
+            req_index.insert(i.value(), i.key());
         }
-        qDebug() << req_index;
+    //qDebug () << req_index;
     }
 };
 
 class MainEngine {
 public:
-    static void data_output (QString &req, json &database_index) {
+    static void data_output (QString& req, json &database_index) {
         SearchServer* search = new SearchServer(req, database_index);
         delete(search);
     }
-
 private:
 };
 

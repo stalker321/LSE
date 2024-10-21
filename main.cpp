@@ -25,7 +25,7 @@ int main(){
     QList<QFuture<void>> multiple_search;
     for (int i = 0; i < query["requests"].size(); i++) {
         multiple_search.append(QtConcurrent::run(
-                MainEngine::data_output, QString::fromStdString(query["requests"][i]),
+                MainEngine::dataOutput, QString::fromStdString(query["requests"][i]),
                 search_archive->get_fileIndex()));
     }
     for (auto i : multiple_search) i.waitForFinished();

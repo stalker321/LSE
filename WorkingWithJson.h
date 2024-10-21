@@ -143,15 +143,32 @@ public:
         for (auto i = temp.begin(), end = temp.end(); i != end; i++){
             req_index.insert(i.value(), i.key());
         }
-    //qDebug () << req_index;
+        //mult
+        QList<QFuture<QVector<int>>> multiple_counting;
+        for (auto i = req_index.begin(); i != req_index.end(); i++) {
+            if (!database_index["index"].contains(i.value().toStdString())) continue;
+            multiple_counting.append(QtConcurrent::run(searchResult, i.value(), database_index));
+        }
+
+        for (auto& i : multiple_counting) i.waitForFinished();
+        QVector<int> result(multiple_counting[0].result().size());
+        for (auto& i : multiple_counting) {
+            for (int v = 0; v < i.result().size(); v++) {
+                result[v] = i.result()[v];
+            }
+        }
+    }
+
+    static QVector<int> searchResult (QString search, json& database) {
+        QVector<int> answer = database["index"][search.toStdString()];
+        return answer;
     }
 };
 
 class MainEngine {
 public:
-    static void data_output (QString& req, json &database_index) {
-        SearchServer* search = new SearchServer(req, database_index);
-        delete(search);
+    static void dataOutput (QString& req, json &database_index) {
+        SearchServer(req, database_index);
     }
 private:
 };

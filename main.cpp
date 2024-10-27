@@ -19,17 +19,18 @@ int main(){
     }
     DocumentBase* search_archive = new DocumentBase (path, format);
     json query (search_query(requestsPath));
-    qDebug() << to_string(search_archive->get_fileIndex()).c_str();
 
-    //test
+    //search
     QList<QFuture<void>> multiple_search;
-    for (int i = 0; i < query["requests"].size(); i++) {
+    int counter_request = 0;
+    for (auto &i : query["requests"]) {
         multiple_search.append(QtConcurrent::run(
-                MainEngine::dataOutput, QString::fromStdString(query["requests"][i]),
-                search_archive->get_fileIndex()));
+                MainEngine::dataOutput, QString::fromStdString(i),
+                search_archive->get_fileIndex(), counter_request));
+        counter_request++;
     }
     for (auto i : multiple_search) i.waitForFinished();
-
+    MainEngine::write_history();
     //delete
     delete (search_archive);
 }

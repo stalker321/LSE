@@ -5,6 +5,6 @@
 #include <QString>
 #include <QFile>
 
-void errorLog (QString errorMessage, bool closeProgram);
+void errorLog (QString errorMessage, bool closeProgram = false);
 
 #endif // ERRORMESSAGE_H

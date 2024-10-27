@@ -1,6 +1,7 @@
 #ifndef WORKINGWITHJSON_H
 #define WORKINGWITHJSON_H
 #include <QMap>
+#include <math.h>
 #include <QFile>
 #include <QList>
 #include <QHash>
@@ -8,6 +9,7 @@
 #include <QFuture>
 #include <QVector>
 #include <QMultiMap>
+#include <QByteArray>
 #include <filesystem>
 #include <QtConcurrent>
 #include "errormessage.h"
@@ -15,14 +17,15 @@
 #include "nlohmann/json.hpp"
 #include "WI/word_indexing.h"
 
-#include <iostream>
-#include <list>
 #include <string>
+
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 QVector<QString> stop_word;
+QMutex read_answer;
+json history;
 
 //database in json format
 class DocumentBase {
@@ -67,8 +70,6 @@ public:
             }
             counter++;
         }
-//        qDebug() << to_string(fileIndex["index"]).c_str();
-//        qDebug() << to_string(fileIndex["address"]).c_str();
     }
 
     //collect files using the specified path
@@ -139,38 +140,80 @@ class SearchServer {
 public:
     SearchServer (QString& req, json &database_index) {
         auto temp = WI::indexing_word(req, stop_word);
-        QMultiMap<int, QString> req_index;
+        QMultiMap<int, QString> reqIndex;
         for (auto i = temp.begin(), end = temp.end(); i != end; i++){
-            req_index.insert(i.value(), i.key());
+            reqIndex.insert(i.value(), i.key());
         }
-        //mult
-        QList<QFuture<QVector<int>>> multiple_counting;
-        for (auto i = req_index.begin(); i != req_index.end(); i++) {
-            if (!database_index["index"].contains(i.value().toStdString())) continue;
-            multiple_counting.append(QtConcurrent::run(searchResult, i.value(), database_index));
-        }
+        if (reqIndex.size() < 1) return;
 
-        for (auto& i : multiple_counting) i.waitForFinished();
-        QVector<int> result(multiple_counting[0].result().size());
-        for (auto& i : multiple_counting) {
-            for (int v = 0; v < i.result().size(); v++) {
-                result[v] = i.result()[v];
+//search
+        QList<QVector<int>> searchByIndex;
+        for (auto r = reqIndex.begin(); r != reqIndex.end(); r++) {
+            if (!database_index["index"].contains(r.value().toStdString())) continue;
+            searchByIndex.append(searchResult(r.value(), database_index));
+        }
+        QVector<int> result(searchByIndex[0].size());
+        for (auto& s : searchByIndex) {
+            for (int i = 0; i < s.size(); i++) {
+                result[i] += s[i];
             }
         }
+        float max = *std::max_element(result.begin(), result.end());
+//forming a response
+        for(int i = 0; i < result.size(); i++) {
+            if (result[i] == 0) continue;
+            search_response.insert(result[i]/max, i);
+        }
     }
-
-    static QVector<int> searchResult (QString search, json& database) {
+//a useless function, but with fewer errors
+    QVector<int> searchResult (QString search, json& database) {
         QVector<int> answer = database["index"][search.toStdString()];
         return answer;
     }
+
+    const QMultiMap<double,int> get_search_response(){
+        return search_response;
+    }
+
+private:
+    QMultiMap<double,int> search_response;
 };
 
-class MainEngine {
-public:
-    static void dataOutput (QString& req, json &database_index) {
-        SearchServer(req, database_index);
+struct MainEngine {
+    static void dataOutput (QString& req, json &database_index, int request_id) {
+        SearchServer searchServer (req, database_index);
+        //json
+        auto &searchResult = searchServer.get_search_response();
+        QString num_request ("request");
+        num_request += QString("%1").arg(request_id);
+        if (searchResult.empty()) {
+            history["answer"][num_request.toStdString()]["result"] = false;
+        } else {
+            history["answer"][num_request.toStdString()]["result"] = true;
+        }
+        json test;
+        for (auto a = searchResult.end(); a != searchResult.begin();) {
+            --a;
+            test["docid"] = a.value();
+            //the json bug incorrectly perceives float 0.2
+            test["rank"] = (double)floorf(a.key()*1000) / 1000;
+            history["answer"][num_request.toStdString()]["relevance"]["rank"].emplace_back(test);
+        }
     }
-private:
+
+    static void write_history () {
+        QString val = to_string (history).c_str();
+                QJsonDocument doc = QJsonDocument::fromJson(val.toUtf8());
+                QFile responseRequest("answer.json");
+                if (!responseRequest.open(QIODevice::WriteOnly)) {
+                    //error message
+                    QString errorMessage ("Error working with the answer file");
+                    errorLog(errorMessage);
+                    return;
+                }
+                responseRequest.write(QJsonDocument(doc).toJson(QJsonDocument::Indented));
+                responseRequest.close();
+    }
 };
 
 #endif // WORKINGWITHJSON_H

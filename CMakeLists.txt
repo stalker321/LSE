@@ -16,7 +16,6 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Concurrent)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-#add_library(WI)
 add_subdirectory(nlohmann_json)
 add_subdirectory(WI)
 
@@ -27,8 +26,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/requests.json ${CMAKE_CURRENT_BINARY_
 add_executable(FinalProject
   main.cpp
   WorkingWithJson.h
-  startsearch.h
-  startsearch.cpp
   errormessage.h
   errormessage.cpp
 )

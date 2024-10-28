@@ -27,37 +27,52 @@ QVector<QString> stop_word;
 QMutex read_answer;
 json history;
 
-//database in json format
-class DocumentBase {
+class JsonWork {
 public:
-    DocumentBase (QString& path, QVector<QString>& format) {
-        if (path.size() < 1) errorLog("Incorrect file path", true);
-        fs::path directory (path.toStdString());
-        QVector<QString> paths = search_extension(directory, format);
-        QList<QString> index;
-        int counter = 0;
-        //collecting unique words
-        for (auto &i : paths) {
-            uniqueWords(i, index);
+    void configCheck (QString config, QString currentVersion) {
+        QFile fileConfig (config);
+        if (!fileConfig.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            fileConfig.close();
+            errorLog("error in the config file", true);
         }
-        for (auto &i : index) fileIndex["index"][i.toStdString()].push_back(0);
+        fileIndex  = json::parse(fileConfig.readAll().toStdString());
+        if (fileIndex["config"]["version"] != currentVersion.toStdString()) {
+            fileConfig.close();
+            errorLog("mismatch of project versions", true);
+        }
 
-        //collecting the json search file
+        fileConfig.close();
+    }
+
+    void search_query (QString& path) {
+        QFile reqFile(path);
+        if (!reqFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            reqFile.close();
+            errorLog("Search query file error", true);
+        }
+        fileIndex = json::parse(reqFile.readAll());
+        reqFile.close();
+        if (fileIndex["requests"].size() < 1) errorLog("The search query file is empty", true);
+    }
+
+    void searchFile (QVector<QString>& file_paths, QList<QString>& index) {
+        for (auto &i : index) fileIndex["index"][i.toStdString()].push_back(0);
+        int counter = 0;
         QList<QFuture<json>> informationResource;
-        for (auto &p : paths) {
+        for (auto &p : file_paths) {
             informationResource.append(QtConcurrent::run(docIndexing, p));
         }
         for (auto &w : informationResource) w.waitForFinished();
         for (auto &i : informationResource) {
             fileIndex["address"].push_back(i.result()["address"]);
-
+//json *temp
             json temp = i.result()["index"];
             for (auto t = temp.begin(); t != temp.end(); t++) {
-                if (counter == 0) {
-                     fileIndex["index"][t.key()][counter] = (t.value());
-                } else {
+//                if (counter == 0) {
+//                    fileIndex["index"][t.key()][counter] = (t.value());
+//                } else {
                     fileIndex["index"][t.key()].push_back(t.value());
-                }
+//                }
             }
 
             if (counter == 0) {
@@ -70,6 +85,54 @@ public:
             }
             counter++;
         }
+    }
+//multithreading
+        static json docIndexing (QString path) {
+            json indexing;
+            indexing["address"] = path.toStdString();
+
+            QFile resursec (path);
+            if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
+                resursec.close();
+                errorLog("File reading error " + path, true);
+            }
+
+            QString text = resursec.readAll();
+            resursec.close();
+            QHash<QString, int> word (WI::indexing_word(text, stop_word));
+            for (auto i = word.begin(), end = word.end(); i != end; i++){
+                indexing["index"][i.key().toStdString()] = i.value();
+            }
+            return indexing;
+        }
+//get
+        const json &get_fileIdex() {
+            return fileIndex;
+        }
+
+
+private:
+    json fileIndex;
+};
+
+//database in json format
+class DocumentBase {
+public:
+    ~DocumentBase() {
+        delete(jsonWork);
+    }
+    DocumentBase (QString& path, QVector<QString>& format) {
+        if (path.size() < 1) errorLog("Incorrect file path", true);
+        fs::path directory (path.toStdString());
+        QVector<QString> paths = search_extension(directory, format);
+        QList<QString> index;
+        //collecting unique words
+        for (auto &i : paths) {
+            uniqueWords(i, index);
+        }
+//json work
+        jsonWork->searchFile(paths, index);
+
     }
 
     //collect files using the specified path
@@ -91,30 +154,11 @@ public:
         }
     }
 
-    const json &get_fileIndex () {
-        return fileIndex;
+    const json get_document () {
+        return jsonWork->get_fileIdex();
     }
 
     //functions for multithreading
-    static json docIndexing (QString path) {
-        json indexing;
-        indexing["address"] = path.toStdString();
-
-        QFile resursec (path);
-        if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
-            resursec.close();
-            errorLog("File reading error " + path, true);
-        }
-
-        QString text = resursec.readAll();
-        resursec.close();
-        QHash<QString, int> word (WI::indexing_word(text, stop_word));
-        for (auto i = word.begin(), end = word.end(); i != end; i++){
-            indexing["index"][i.key().toStdString()] = i.value();
-        }
-        return indexing;
-    }
-
     static void uniqueWords (QString& path, QList<QString>& index) {
             QFile resursec (path);
             if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
@@ -132,7 +176,8 @@ public:
 
 
 protected:
-    json fileIndex;
+//json *temp
+    JsonWork* jsonWork = new JsonWork;
 
 };
 
@@ -145,7 +190,6 @@ public:
             reqIndex.insert(i.value(), i.key());
         }
         if (reqIndex.size() < 1) return;
-
 //search
         QList<QVector<int>> searchByIndex;
         for (auto r = reqIndex.begin(); r != reqIndex.end(); r++) {
@@ -195,7 +239,7 @@ struct MainEngine {
         for (auto a = searchResult.end(); a != searchResult.begin();) {
             --a;
             test["docid"] = a.value();
-            //the json bug incorrectly perceives float 0.2
+//the json bug incorrectly perceives float 0.2
             test["rank"] = (double)floorf(a.key()*1000) / 1000;
             history["answer"][num_request.toStdString()]["relevance"]["rank"].emplace_back(test);
         }

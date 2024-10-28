@@ -6,7 +6,7 @@
 QVector<QString> format {".txt", ".rft"};
 QString requestsPath  ("requests.json");
 QString configPath      ("config.json");
-QString version               ("0.0.3");
+QString version               ("0.1.0");
 
 int main(){
     QTextCodec *codec = QTextCodec::codecForName("UTF-8");

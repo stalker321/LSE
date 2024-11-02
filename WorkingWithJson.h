@@ -1,10 +1,10 @@
 #ifndef WORKINGWITHJSON_H
 #define WORKINGWITHJSON_H
 #include <QMap>
-#include <math.h>
 #include <QFile>
 #include <QList>
 #include <QHash>
+#include <math.h>
 #include <QDebug>
 #include <QFuture>
 #include <QVector>
@@ -17,247 +17,125 @@
 #include "nlohmann/json.hpp"
 #include "WI/word_indexing.h"
 
-#include <string>
-
+QVector<QString> stopWord;
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-QVector<QString> stop_word;
-QMutex read_answer;
-json history;
-
-class JsonWork {
-public:
+//working with json config/query files
+struct SistemJson {
+//config
     void configCheck (QString config, QString currentVersion) {
         QFile fileConfig (config);
         if (!fileConfig.open(QIODevice::ReadOnly | QIODevice::Text)) {
             fileConfig.close();
             errorLog("error in the config file", true);
         }
-        fileIndex  = json::parse(fileConfig.readAll().toStdString());
-        if (fileIndex["config"]["version"] != currentVersion.toStdString()) {
+        info = json::parse(fileConfig.readAll().toStdString());
+        if (info["config"]["version"] != currentVersion.toStdString()) {
             fileConfig.close();
             errorLog("mismatch of project versions", true);
         }
 
         fileConfig.close();
     }
-
-    void search_query (QString& path) {
+//query
+    void searchQuery (QString& path) {
         QFile reqFile(path);
         if (!reqFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
             reqFile.close();
             errorLog("Search query file error", true);
         }
-        fileIndex = json::parse(reqFile.readAll());
+        info = json::parse(reqFile.readAll());
         reqFile.close();
-        if (fileIndex["requests"].size() < 1) errorLog("The search query file is empty", true);
+        if (info["requests"].size() < 1) errorLog("The search query file is empty", true);
     }
-
-    void searchFile (QVector<QString>& file_paths, QList<QString>& index) {
-        for (auto &i : index) fileIndex["index"][i.toStdString()].push_back(0);
+//get
+        const json &getInfo() {
+            return info;
+        }
+protected:
+    json info;
+};
+//document base
+class Base {
+public:
+    void searchFile (QVector<QString>& filePaths, QList<QString>& index) {
+        for (auto &i : index) wordIndexDatabase["index"][i.toStdString()].push_back(0);
         int counter = 0;
         QList<QFuture<json>> informationResource;
-        for (auto &p : file_paths) {
+        for (auto &p : filePaths) {
             informationResource.append(QtConcurrent::run(docIndexing, p));
         }
         for (auto &w : informationResource) w.waitForFinished();
         for (auto &i : informationResource) {
-            fileIndex["address"].push_back(i.result()["address"]);
-//json *temp
+            wordIndexDatabase["address"].push_back(i.result()["address"]);
             json temp = i.result()["index"];
             for (auto t = temp.begin(); t != temp.end(); t++) {
-//                if (counter == 0) {
-//                    fileIndex["index"][t.key()][counter] = (t.value());
-//                } else {
-                    fileIndex["index"][t.key()].push_back(t.value());
-//                }
+                if (counter == 0) {
+                    wordIndexDatabase["index"][t.key()][counter] = (t.value());
+                } else {
+                    wordIndexDatabase["index"][t.key()].push_back(t.value());
+                }
             }
-
             if (counter == 0) {
                 counter++;
                 continue;
             }
 
-            for (auto &t : fileIndex["index"]){
+            for (auto &t : wordIndexDatabase["index"]){
                 if (t[counter].empty()) t[counter] = 0;
             }
             counter++;
         }
     }
 //multithreading
-        static json docIndexing (QString path) {
-            json indexing;
-            indexing["address"] = path.toStdString();
+    static json docIndexing (QString path) {
+        json indexing;
+        indexing["address"] = path.toStdString();
 
-            QFile resursec (path);
-            if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
-                resursec.close();
-                errorLog("File reading error " + path, true);
-            }
-
-            QString text = resursec.readAll();
+        QFile resursec (path);
+        if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
             resursec.close();
-            QHash<QString, int> word (WI::indexing_word(text, stop_word));
-            for (auto i = word.begin(), end = word.end(); i != end; i++){
-                indexing["index"][i.key().toStdString()] = i.value();
-            }
-            return indexing;
+            errorLog("File reading error " + path, true);
         }
+
+        QString text = resursec.readAll();
+        resursec.close();
+        QHash<QString, int> word (WI::indexing_word(text, stopWord));
+        for (auto i = word.begin(), end = word.end(); i != end; i++){
+            indexing["index"][i.key().toStdString()] = i.value();
+        }
+        return indexing;
+    }
 //get
-        const json &get_fileIdex() {
-            return fileIndex;
-        }
-
-
-private:
-    json fileIndex;
-};
-
-//database in json format
-class DocumentBase {
-public:
-    ~DocumentBase() {
-        delete(jsonWork);
-    }
-    DocumentBase (QString& path, QVector<QString>& format) {
-        if (path.size() < 1) errorLog("Incorrect file path", true);
-        fs::path directory (path.toStdString());
-        QVector<QString> paths = search_extension(directory, format);
-        QList<QString> index;
-        //collecting unique words
-        for (auto &i : paths) {
-            uniqueWords(i, index);
-        }
-//json work
-        jsonWork->searchFile(paths, index);
-
-    }
-
-    //collect files using the specified path
-    QVector<QString> search_extension (fs::path& dir, QVector<QString>& ext) {
-        QVector<QString> paths;
-        for (const fs::directory_entry& p : fs::directory_iterator(dir)){
-            if (!fs::is_regular_file(p.status())) continue;
-            filePath(p, ext, paths);
-        }
-        return paths;
-    }
-
-    void filePath (fs::directory_entry p, QVector<QString>& ext, QVector<QString>& path){
-        for (auto& e : ext) {
-            if (!p.path().extension().compare(e.toStdString())){
-                path.append(QString::fromStdString(p.path().u8string()));
-                break;
-            }
-        }
-    }
-
-    const json get_document () {
-        return jsonWork->get_fileIdex();
-    }
-
-    //functions for multithreading
-    static void uniqueWords (QString& path, QList<QString>& index) {
-            QFile resursec (path);
-            if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
-                resursec.close();
-                errorLog("File reading error " + path, true);
-            }
-
-            QString info = resursec.readAll();
-            info = info.toLower();
-            resursec.close();
-            std::list<std::string> answer;
-            index = (WI::unique_words(info, index, stop_word));
-            return;
-    };
-
-
-protected:
-//json *temp
-    JsonWork* jsonWork = new JsonWork;
-
-};
-
-class SearchServer {
-public:
-    SearchServer (QString& req, json &database_index) {
-        auto temp = WI::indexing_word(req, stop_word);
-        QMultiMap<int, QString> reqIndex;
-        for (auto i = temp.begin(), end = temp.end(); i != end; i++){
-            reqIndex.insert(i.value(), i.key());
-        }
-        if (reqIndex.size() < 1) return;
-//search
-        QList<QVector<int>> searchByIndex;
-        for (auto r = reqIndex.begin(); r != reqIndex.end(); r++) {
-            if (!database_index["index"].contains(r.value().toStdString())) continue;
-            searchByIndex.append(searchResult(r.value(), database_index));
-        }
-        QVector<int> result(searchByIndex[0].size());
-        for (auto& s : searchByIndex) {
-            for (int i = 0; i < s.size(); i++) {
-                result[i] += s[i];
-            }
-        }
-        float max = *std::max_element(result.begin(), result.end());
-//forming a response
-        for(int i = 0; i < result.size(); i++) {
-            if (result[i] == 0) continue;
-            search_response.insert(result[i]/max, i);
-        }
-    }
-//a useless function, but with fewer errors
-    QVector<int> searchResult (QString search, json& database) {
-        QVector<int> answer = database["index"][search.toStdString()];
-        return answer;
-    }
-
-    const QMultiMap<double,int> get_search_response(){
-        return search_response;
+    const json &getWordIndexDatabase() {
+        return wordIndexDatabase;
     }
 
 private:
-    QMultiMap<double,int> search_response;
+    json wordIndexDatabase;
 };
-
-struct MainEngine {
-    static void dataOutput (QString& req, json &database_index, int request_id) {
-        SearchServer searchServer (req, database_index);
-        //json
-        auto &searchResult = searchServer.get_search_response();
-        QString num_request ("request");
-        num_request += QString("%1").arg(request_id);
-        if (searchResult.empty()) {
-            history["answer"][num_request.toStdString()]["result"] = false;
-        } else {
-            history["answer"][num_request.toStdString()]["result"] = true;
-        }
-        json test;
-        for (auto a = searchResult.end(); a != searchResult.begin();) {
-            --a;
-            test["docid"] = a.value();
-//the json bug incorrectly perceives float 0.2
-            test["rank"] = (double)floorf(a.key()*1000) / 1000;
-            history["answer"][num_request.toStdString()]["relevance"]["rank"].emplace_back(test);
-        }
+//response history
+class History {
+public:
+    void searchEmpty (bool empty, std::string request) {
+        if (empty) collectHistory["answer"][request]["result"] = false;
+        else collectHistory["answer"][request]["result"] = true;
     }
 
-    static void write_history () {
-        QString val = to_string (history).c_str();
-                QJsonDocument doc = QJsonDocument::fromJson(val.toUtf8());
-                QFile responseRequest("answer.json");
-                if (!responseRequest.open(QIODevice::WriteOnly)) {
-                    //error message
-                    QString errorMessage ("Error working with the answer file");
-                    errorLog(errorMessage);
-                    return;
-                }
-                responseRequest.write(QJsonDocument(doc).toJson(QJsonDocument::Indented));
-                responseRequest.close();
+    void recordingResponses (std::string request,
+        std::unordered_map<std::string, double> rec) {
+        collectHistory["answer"][request]["relevance"].push_back(rec);
     }
+
+//get
+    const json &getCollectHistory() {
+        return collectHistory;
+    }
+
+private:
+    json collectHistory;
 };
 
 #endif // WORKINGWITHJSON_H

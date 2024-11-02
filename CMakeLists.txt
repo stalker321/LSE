@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(FinalProject LANGUAGES CXX VERSION 0.0.1)
+project(FinalProject LANGUAGES CXX VERSION 0.1.0)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -28,9 +28,11 @@ add_executable(FinalProject
   WorkingWithJson.h
   errormessage.h
   errormessage.cpp
+  SearchEngine.h
 )
 
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Concurrent)
 target_link_libraries(FinalProject PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(FinalProject PRIVATE WI)
+add_subdirectory(test)

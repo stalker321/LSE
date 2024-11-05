@@ -11,11 +11,15 @@ public:
     }
     DocumentBase (QString& path, QVector<QString>& format) {
         if (path.size() < 1) {
-            errorLog("Incorrect file path", false);
+            errorLog("Incorrect file path", true);
             return;
         }
         fs::path directory (path.toStdString());
         QVector<QString> paths = searchExtension(directory, format);
+        if (paths.empty()) {
+            errorLog("Incorrect file path", true);
+            return;
+        }
         QList<QString> index;
         //collecting unique words
         for (auto &i : paths) {

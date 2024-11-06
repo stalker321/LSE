@@ -60,7 +60,7 @@ public:
             info = info.toLower();
             resursec.close();
             std::list<std::string> answer;
-            index = (WI::unique_words(info, index, stopWord));
+            index = (WordIndexing::unique_words(info, index, stopWord));
             return;
     }
 
@@ -76,7 +76,7 @@ protected:
 struct SearchServer {
     void createresponce (QString& req, DocumentBase* searchArchive) {
         searchResponse.clear();
-        auto temp = WI::indexing_word(req, stopWord);
+        auto temp = WordIndexing::indexing_word(req, stopWord);
         QMultiMap<int, QString> reqIndex;
         for (auto i = temp.begin(), end = temp.end(); i != end; i++){
             reqIndex.insert(i.value(), i.key());

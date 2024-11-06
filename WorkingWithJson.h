@@ -15,7 +15,7 @@
 #include "errormessage.h"
 
 #include "nlohmann/json.hpp"
-#include "WI/word_indexing.h"
+#include "wordIndexing.h"
 
 QVector<QString> stopWord;
 
@@ -102,7 +102,7 @@ public:
 
         QString text = resursec.readAll();
         resursec.close();
-        QHash<QString, int> word (WI::indexing_word(text, stopWord));
+        QHash<QString, int> word (WordIndexing::indexing_word(text, stopWord));
         for (auto i = word.begin(), end = word.end(); i != end; i++){
             indexing["index"][i.key().toStdString()] = i.value();
         }

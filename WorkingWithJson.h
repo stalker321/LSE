@@ -10,7 +10,6 @@
 #include <QVector>
 #include <QMultiMap>
 #include <QByteArray>
-#include <filesystem>
 #include <QtConcurrent>
 #include "errormessage.h"
 
@@ -20,7 +19,6 @@
 QVector<QString> stopWord;
 
 using json = nlohmann::json;
-namespace fs = std::filesystem;
 
 //working with json config/query files
 struct SistemJson {
@@ -65,7 +63,7 @@ public:
         int counter = 0;
         QList<QFuture<json>> informationResource;
         for (auto &p : filePaths) {
-            informationResource.append(QtConcurrent::run(docIndexing, p));
+            informationResource.append(QtConcurrent::run(Base::docIndexing, p));
         }
         for (auto &w : informationResource) w.waitForFinished();
         for (auto &i : informationResource) {
@@ -102,7 +100,7 @@ public:
 
         QString text = resursec.readAll();
         resursec.close();
-        QHash<QString, int> word (WordIndexing::indexing_word(text, stopWord));
+        QHash<QString, int> word (WordIndexing::indexingWord(text, stopWord));
         for (auto i = word.begin(), end = word.end(); i != end; i++){
             indexing["index"][i.key().toStdString()] = i.value();
         }

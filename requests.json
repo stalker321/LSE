@@ -2,6 +2,10 @@
   "requests":[
     "TEST search",
     "t",
-    "проверка"
+    "index",
+    "write",
+    "search",
+    "Проверка Русского языка",
+    "Проверка, test, знаков, simbols"
   ]
 }

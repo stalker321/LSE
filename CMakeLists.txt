@@ -34,4 +34,5 @@ add_executable(FinalProject
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Concurrent)
 target_link_libraries(FinalProject PRIVATE nlohmann_json::nlohmann_json)
+
 add_subdirectory(test)

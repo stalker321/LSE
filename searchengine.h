@@ -1,7 +1,11 @@
 #ifndef SEARCHENGINE_H
 #define SEARCHENGINE_H
 
+#include <filesystem>
+
 #include "WorkingWithJson.h"
+
+namespace fs = std::filesystem;
 
 //database in json format
 class DocumentBase {
@@ -10,7 +14,7 @@ public:
         delete(docBase);
     }
     DocumentBase (QString& path, QVector<QString>& format) {
-        if (path.size() < 1) {
+        if (path.size() < 1 || !(fs::exists((path.toStdString())))) {
             errorLog("Incorrect file path", true);
             return;
         }
@@ -21,7 +25,7 @@ public:
             return;
         }
         QList<QString> index;
-        //collecting unique words
+//collecting unique words
         for (auto &i : paths) {
             uniqueWords(i, index);
         }
@@ -60,7 +64,7 @@ public:
             info = info.toLower();
             resursec.close();
             std::list<std::string> answer;
-            index = (WordIndexing::unique_words(info, index, stopWord));
+            index = (WordIndexing::uniqueWords(info, index, stopWord));
             return;
     }
 
@@ -75,8 +79,7 @@ protected:
 
 struct SearchServer {
     void createresponce (QString& req, DocumentBase* searchArchive) {
-        searchResponse.clear();
-        auto temp = WordIndexing::indexing_word(req, stopWord);
+        auto temp = WordIndexing::indexingWord(req, stopWord);
         QMultiMap<int, QString> reqIndex;
         for (auto i = temp.begin(), end = temp.end(); i != end; i++){
             reqIndex.insert(i.value(), i.key());
@@ -88,17 +91,19 @@ struct SearchServer {
             if (!searchArchive->getDocument()["index"].contains(r.value().toStdString())) continue;
             searchByIndex.append(searchResult(r.value(), searchArchive));
         }
+        if (searchByIndex.empty()) return;
         QVector<int> result(searchByIndex[0].size());
-        for (auto& s : searchByIndex) {
+        for (auto &s : searchByIndex) {
             for (int i = 0; i < s.size(); i++) {
                 result[i] += s[i];
             }
         }
         float max = *std::max_element(result.begin(), result.end());
-//forming a response
-        for(int i = 0; i < result.size(); i++) {
-            if (result[i] == 0) continue;
-            searchResponse.insert(result[i]/max, i);
+        // forming a response
+        for (int i = 0; i < result.size(); i++) {
+            if (result[i] == 0)
+                continue;
+            searchResponse.insert(result[i] / max, i);
         }
     }
 //a useless function, but with fewer errors
@@ -139,11 +144,11 @@ public:
         responseRequest.close();
     }
 //multithreading
-    static void dataOutput (/*SearchServer* staticSearchServer*/ History* staticHistory,
-                            DocumentBase* staticSearchArchive, QString& req, int idRequest) {
+    static void dataOutput (History* staticHistory, DocumentBase* staticSearchArchive,
+                           QString req, int idRequest) {
         SearchServer searchServer;
         searchServer.createresponce(req, staticSearchArchive);
-        //json
+//json
         auto &searchResult = searchServer.getSearchResponse();
         QString numRequest ("request");
         numRequest += QString("%1").arg(idRequest);

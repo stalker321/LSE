@@ -1,12 +1,6 @@
 #include <iostream>
 #include <QDebug>
 
-// #if QT_VERSION_MAJOR < 6
-//     #include <QTextCodec>
-// #else
-//     #include <QtCore5Compat/QTextCodec>
-// #endif
-
 #include "searchengine.h"
 
 QVector<QString> format {".txt", ".rft"};
@@ -26,7 +20,6 @@ int main(){
     MainSearchEngine *mainSearchEngine = new MainSearchEngine(path, format);
 //json
     info->searchQuery(requestsPath);
-    qDebug() << to_string (info->getInfo()).c_str();
 //search
     QList<QFuture<void>> multipleSearch;
     int counterRequest = 0;

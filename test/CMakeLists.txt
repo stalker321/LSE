@@ -1,1 +1,1 @@
-#add_subdirectory(TestSearchServer)
+add_subdirectory(TestSearchServer)

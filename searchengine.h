@@ -2,19 +2,25 @@
 #define SEARCHENGINE_H
 
 #include <filesystem>
-
+#include <Thread>
+#include "wordIndexing.h"
 #include "WorkingWithJson.h"
 
+std::mutex mut;
 namespace fs = std::filesystem;
+
+struct FileInfo {
+    int id;
+    QString address;
+    QHash<QString, int> textIndex;
+};
 
 //database in json format
 class DocumentBase {
 public:
-    ~DocumentBase() {
-        delete(docBase);
-    }
+    ~DocumentBase() {}
     DocumentBase (QString& path, QVector<QString>& format) {
-        if (path.size() < 1 || !(fs::exists((path.toStdString())))) {
+        if (!fs::exists(path.toStdString())) {
             errorLog("Incorrect file path", true);
             return;
         }
@@ -24,17 +30,61 @@ public:
             errorLog("Incorrect file path", true);
             return;
         }
-        QList<QString> index;
-//collecting unique words
-        for (auto &i : paths) {
-            uniqueWords(i, index);
+        searchFile(paths);
+        QList<std::thread*> readIndexBase;
+        for (auto &i : docBase) {
+            readIndexBase.append(new std::thread(writeIndex, std::move(i), &indexBase));
         }
-//json work
-        docBase->searchFile(paths, index);
-
+        for (auto *i : readIndexBase) i->join();
     }
+    void searchFile (QVector<QString>& filePaths) {
+        QList<QFuture<FileInfo>> informationResource;
+        for (auto &p : filePaths) {
+            informationResource.append(QtConcurrent::run(docIndexing, p, id));
+            id++;
+        }
+        for (auto &w : informationResource) w.waitForFinished();
+        for (auto &i : informationResource) {
+            docBase.append(i.result());
+        }
+    }
+    //multithreading
+    static FileInfo docIndexing (QString path, int id) {
+        FileInfo indexing;
+        indexing.address = path;
+        indexing.id = id;
+        QFile resursec (path);
 
-    //collect files using the specified path
+        if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
+            resursec.close();
+            errorLog("File reading error " + path, true);
+        }
+
+        QString text = resursec.readAll();
+        resursec.close();
+        indexing.textIndex = WordIndexing::indexingWord(text, stopWord);
+        return indexing;
+    }
+    static void writeIndex (FileInfo info, QMap<QString, QVector<QPair<int, int>>> *base) {
+        if (!info.textIndex.empty()){
+            for (auto i = info.textIndex.begin(); i != info.textIndex.end(); i++) {
+                mut.lock();
+                (*base)[i.key()].append(QPair<int, int>(i.value(), info.id));
+                mut.unlock();
+            }
+        }
+    }
+//add docBase
+    // const void setBase (QString& path, QVector<QString> format) {
+    //     if (!fs::exists(path.toStdString())) {
+    //         errorLog("Incorrect add file path", false);
+    //         return;
+    //     }
+    //     if (!fs::is_directory(path.toStdString())) {
+
+    //     }
+    // }
+//collect files using the specified path
     QVector<QString> searchExtension (fs::path& dir, QVector<QString>& ext) {
         QVector<QString> paths;
         for (const fs::directory_entry& p : fs::directory_iterator(dir)){
@@ -52,66 +102,42 @@ public:
             }
         }
     }
-
-    void uniqueWords (QString& path, QList<QString>& index) {
-            QFile resursec (path);
-            if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
-                resursec.close();
-                errorLog("File reading error " + path, true);
-            }
-
-            QString info = resursec.readAll();
-            info = info.toLower();
-            resursec.close();
-            std::list<std::string> answer;
-            index = (WordIndexing::uniqueWords(info, index, stopWord));
-            return;
-    }
-
-
-    const json getDocument () {
-        return docBase->getWordIndexDatabase();
+//get
+    const QMap<QString, QVector<QPair<int, int>>> getIndexBase () {
+        return indexBase;
     }
 protected:
-//json
-    Base* docBase = new Base;
+    QMap<QString, QVector<QPair<int, int>>> indexBase;
+    QVector<FileInfo> docBase;
+    int id = 0;
 };
 
 struct SearchServer {
     void createresponce (QString& req, DocumentBase* searchArchive) {
         auto temp = WordIndexing::indexingWord(req, stopWord);
+//a blank to improve relevance
         QMultiMap<int, QString> reqIndex;
         for (auto i = temp.begin(), end = temp.end(); i != end; i++){
             reqIndex.insert(i.value(), i.key());
         }
         if (reqIndex.size() < 1) return;
 //search
-        QList<QVector<int>> searchByIndex;
+        QMap <int, int> intermediateSearch;
+        int max = 0;
         for (auto r = reqIndex.begin(); r != reqIndex.end(); r++) {
-            if (!searchArchive->getDocument()["index"].contains(r.value().toStdString())) continue;
-            searchByIndex.append(searchResult(r.value(), searchArchive));
-        }
-        if (searchByIndex.empty()) return;
-        QVector<int> result(searchByIndex[0].size());
-        for (auto &s : searchByIndex) {
-            for (int i = 0; i < s.size(); i++) {
-                result[i] += s[i];
+            if (!searchArchive->getIndexBase().contains(r.value())) continue;
+            for (auto &i : searchArchive->getIndexBase()[r.value()]) {
+                intermediateSearch[i.second] += i.first;
+                max = std::max(max,intermediateSearch[i.second]);
             }
         }
-        float max = *std::max_element(result.begin(), result.end());
+        if (intermediateSearch.empty()) return;
         // forming a response
-        for (int i = 0; i < result.size(); i++) {
-            if (result[i] == 0)
-                continue;
-            searchResponse.insert(result[i] / max, i);
+        for (auto i = intermediateSearch.begin(); i != intermediateSearch.end(); i++) {
+            searchResponse.insert(float(i.value())/max, i.key());
         }
     }
-//a useless function, but with fewer errors
-    QVector<int> searchResult (QString search, DocumentBase* searchArchive) {
-        QVector<int> answer = searchArchive->getDocument()["index"][search.toStdString()];
-        return answer;
-    }
-
+//get
     const QMultiMap<double,int> getSearchResponse(){
         return searchResponse;
     }
@@ -125,6 +151,7 @@ public:
 //delete
     ~MainSearchEngine() {
         delete(history);
+        delete(searchArchive);
     }
     MainSearchEngine (QString& path, QVector<QString>& format) {
         searchArchive = new DocumentBase(path, format);
@@ -146,21 +173,26 @@ public:
 //multithreading
     static void dataOutput (History* staticHistory, DocumentBase* staticSearchArchive,
                            QString req, int idRequest) {
-        SearchServer searchServer;
-        searchServer.createresponce(req, staticSearchArchive);
+        SearchServer *searchServer = new SearchServer;
+        searchServer->createresponce(req, staticSearchArchive);
 //json
-        auto &searchResult = searchServer.getSearchResponse();
+        auto &searchResult = searchServer->getSearchResponse();
         QString numRequest ("request");
         numRequest += QString("%1").arg(idRequest);
-        staticHistory->searchEmpty(searchResult.empty(), numRequest.toStdString());
+        mut.lock();
+        staticHistory->setSearchEmpty(searchResult.empty(), numRequest.toStdString());
+        mut.unlock();
         std::unordered_map<std::string, double> temp;
         for (auto a = searchResult.end(); a != searchResult.begin();) {
             --a;
             temp["docid"] = a.value();
 //the json bug incorrectly perceives float 0.2
             temp["rank"] = (double)floorf(a.key()*1000) / 1000;
-            staticHistory->recordingResponses(numRequest.toStdString(), temp);
+            mut.lock();
+            staticHistory->setRecordingResponses(numRequest.toStdString(), temp);
+            mut.unlock();
         }
+        delete(searchServer);
     }
 //get
     DocumentBase* getSearchArchive () {

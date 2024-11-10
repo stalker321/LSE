@@ -25,14 +25,14 @@ int main(){
     int counterRequest = 0;
     for (auto &i : info->getInfo()["requests"]) {
         multipleSearch.append(QtConcurrent::run([=](){
-            mainSearchEngine->dataOutput(mainSearchEngine->getHistory(), mainSearchEngine->getSearchArchive(),
+            MainSearchEngine::dataOutput(mainSearchEngine->getHistory(), mainSearchEngine->getSearchArchive(),
                                          QString::fromStdString(i), counterRequest);
         }));
         counterRequest++;
     }
     for (auto i : multipleSearch) i.waitForFinished();
     mainSearchEngine->writeHistory();
-// // delete
+// delete
     delete (mainSearchEngine);
     delete (info);
 }

@@ -14,7 +14,6 @@
 #include "errormessage.h"
 
 #include "nlohmann/json.hpp"
-#include "wordIndexing.h"
 
 QVector<QString> stopWord;
 
@@ -55,78 +54,17 @@ struct SistemJson {
 protected:
     json info;
 };
-//document base
-class Base {
-public:
-    void searchFile (QVector<QString>& filePaths, QList<QString>& index) {
-        for (auto &i : index) wordIndexDatabase["index"][i.toStdString()].push_back(0);
-        int counter = 0;
-        QList<QFuture<json>> informationResource;
-        for (auto &p : filePaths) {
-            informationResource.append(QtConcurrent::run(Base::docIndexing, p));
-        }
-        for (auto &w : informationResource) w.waitForFinished();
-        for (auto &i : informationResource) {
-            wordIndexDatabase["address"].push_back(i.result()["address"]);
-            json temp = i.result()["index"];
-            for (auto t = temp.begin(); t != temp.end(); t++) {
-                if (counter == 0) {
-                    wordIndexDatabase["index"][t.key()][counter] = (t.value());
-                } else {
-                    wordIndexDatabase["index"][t.key()].push_back(t.value());
-                }
-            }
-            if (counter == 0) {
-                counter++;
-                continue;
-            }
-
-            for (auto &t : wordIndexDatabase["index"]){
-                if (t[counter].empty()) t[counter] = 0;
-            }
-            counter++;
-        }
-    }
-//multithreading
-    static json docIndexing (QString path) {
-        json indexing;
-        indexing["address"] = path.toStdString();
-
-        QFile resursec (path);
-        if (!resursec.open(QIODevice::ReadOnly | QIODevice::Text)){
-            resursec.close();
-            errorLog("File reading error " + path, true);
-        }
-
-        QString text = resursec.readAll();
-        resursec.close();
-        QHash<QString, int> word (WordIndexing::indexingWord(text, stopWord));
-        for (auto i = word.begin(), end = word.end(); i != end; i++){
-            indexing["index"][i.key().toStdString()] = i.value();
-        }
-        return indexing;
-    }
-//get
-    const json &getWordIndexDatabase() {
-        return wordIndexDatabase;
-    }
-
-private:
-    json wordIndexDatabase;
-};
 //response history
 class History {
 public:
-    void searchEmpty (bool empty, std::string request) {
+    void setSearchEmpty (bool empty, std::string request) {
         if (empty) collectHistory["answer"][request]["result"] = false;
         else collectHistory["answer"][request]["result"] = true;
     }
-
-    void recordingResponses (std::string request,
+    void setRecordingResponses (std::string request,
         std::unordered_map<std::string, double> rec) {
         collectHistory["answer"][request]["relevance"].push_back(rec);
     }
-
 //get
     const json &getCollectHistory() {
         return collectHistory;

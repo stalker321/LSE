@@ -14,7 +14,7 @@
 
 struct WordIndexing {
 
-    static QList<QString> uniqueWords (QString &resources, QVector<QString> &stop_word) {
+    static QList<QString> uniqueWords (QString &resources, QList<QString> &stop_word) {
         resources = resources.toLower();
         QList<QString> answer;
         for (auto &s : resources.split(QRegExp("[\\s|\\n|\\r|\\.|,|!|\\?|:|;|«|»|•|…|-|—|-|–|(|)]+"), Qt::SkipEmptyParts)) {
@@ -32,7 +32,7 @@ struct WordIndexing {
         return word_list;
     }
 
-    static QHash<QString, int> indexingWord (QString& resources, QVector<QString> &stop_word) {
+    static QHash<QString, int> indexingWord (QString& resources, QList<QString> &stop_word) {
         resources = resources.toLower();
         QHash<QString, int> answer;
         for (auto &t : resources.split(QRegExp("[\\s|\\n|\\r|\\.|,|!|\\?|:|;|«|»|•|…|-|—|-|–|(|)]+"), Qt::SkipEmptyParts)){

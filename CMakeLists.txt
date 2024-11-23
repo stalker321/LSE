@@ -16,23 +16,27 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Concurrent)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory(nlohmann_json)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.json ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ErrorLog.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/requests.json ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/programInfo.txt ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 add_executable(FinalProject
   main.cpp
+  errormessage.cpp
+  WorkingWithJson/history.cpp
+  WorkingWithJson/sistemJson.cpp
+  searchEngine/DocumentBase.cpp
+  searchEngine/SearchServer.cpp
+  searchEngine/MainSearchEngine.cpp
   WorkingWithJson.h
   errormessage.h
-  errormessage.cpp
   SearchEngine.h
   wordIndexing.h
+  programmessage.h programmessage.cpp
+  interaction.h interaction.cpp
 )
 
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(FinalProject PRIVATE Qt${QT_VERSION_MAJOR}::Concurrent)
-target_link_libraries(FinalProject PRIVATE nlohmann_json::nlohmann_json)
-
-add_subdirectory(test)

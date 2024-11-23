@@ -13,65 +13,34 @@
 #include <QtConcurrent>
 #include "errormessage.h"
 
-#include "nlohmann/json.hpp"
-
-QVector<QString> stopWord;
-
-using json = nlohmann::json;
 
 //working with json config/query files
 struct SistemJson {
 //config
-    void configCheck (QString config, QString currentVersion) {
-        QFile fileConfig (config);
-        if (!fileConfig.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            fileConfig.close();
-            errorLog("error in the config file", true);
-        }
-        info = json::parse(fileConfig.readAll().toStdString());
-        if (info["config"]["version"] != currentVersion.toStdString()) {
-            fileConfig.close();
-            errorLog("mismatch of project versions", true);
-        }
-
-        fileConfig.close();
-    }
+    void setConfigCheck (QString config, QString currentVersion);
 //query
-    void searchQuery (QString& path) {
-        QFile reqFile(path);
-        if (!reqFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            reqFile.close();
-            errorLog("Search query file error", true);
-        }
-        info = json::parse(reqFile.readAll());
-        reqFile.close();
-        if (info["requests"].size() < 1) errorLog("The search query file is empty", true);
-    }
+    void setSearchQuery (QString& path);
 //get
-        const json &getInfo() {
-            return info;
-        }
+    const QJsonDocument &getInfo() {
+        return info;
+    }
 protected:
-    json info;
+    QJsonDocument info;
 };
 //response history
 class History {
 public:
-    void setSearchEmpty (bool empty, std::string request) {
-        if (empty) collectHistory["answer"][request]["result"] = false;
-        else collectHistory["answer"][request]["result"] = true;
-    }
-    void setRecordingResponses (std::string request,
-        std::unordered_map<std::string, double> rec) {
-        collectHistory["answer"][request]["relevance"].push_back(rec);
-    }
+    void setSearchEmpty (bool empty, QString request);
+    void setRecordingResponses (QString request,
+                               QMultiMap<double, int> result);
+    void write ();
 //get
-    const json &getCollectHistory() {
+    const QJsonObject &getCollectHistory() {
         return collectHistory;
     }
 
 private:
-    json collectHistory;
+    QJsonObject collectHistory;
 };
 
 #endif // WORKINGWITHJSON_H

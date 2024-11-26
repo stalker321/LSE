@@ -1,14 +1,16 @@
 #ifndef SEARCHENGINE_H
 #define SEARCHENGINE_H
 
-#include <filesystem>
 #include <Thread>
+#include <iostream>
+#include <filesystem>
 #include "wordIndexing.h"
 #include "WorkingWithJson.h"
 
 namespace fs = std::filesystem;
 //global variable
 extern QList<QString> stopWord;
+extern int numberOfResponses;
 
 struct FileInfo {
     int id;
@@ -34,7 +36,7 @@ protected:
 };
 
 struct SearchServer {
-    void createresponce (QString& req, DocumentBase* searchArchive);
+    void createResponce (QString& req, DocumentBase* searchArchive);
 //get
     const QMultiMap<double,int> getSearchResponse(){
         return searchResponse;
@@ -65,6 +67,10 @@ public:
 protected:
     History* history = new History;
     DocumentBase* searchArchive = nullptr;
+private slots:
+    void checkRequest(QString req);
+signals:
+    void getMessage(QString message);
 };
 
 #endif // SEARCHENGINE_H

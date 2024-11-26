@@ -1,7 +1,8 @@
 #include "WorkingWithJson.h"
 
-void SistemJson::setConfigCheck (QString config, QString currentVersion) {
-    QFile fileConfig (config);
+void SistemJson::setConfigCheck (QString& config, QString& currentVersion) {
+    path = config;
+    QFile fileConfig (path);
     if (!fileConfig.open(QIODevice::ReadOnly | QIODevice::Text)) {
         fileConfig.close();
         errorLog("error in the config file", true);
@@ -16,14 +17,23 @@ void SistemJson::setConfigCheck (QString config, QString currentVersion) {
     fileConfig.close();
 }
 
-void SistemJson::setSearchQuery (QString& path) {
-    QFile reqFile(path);
-    if (!reqFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        reqFile.close();
-//error message
-        errorLog("Search query file error", true);
+
+void SistemJson::setMaxResponsec (int max){
+    QJsonObject root = info.object();
+    QJsonObject config = root["config"].toObject();
+    config["max_responses"] = max;
+    root["config"] = config;
+    info.setObject(root);
+}
+
+SistemJson::~SistemJson() {
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
+        file.close();
+        errorLog("error in the config file", false);
+        return;
     }
-    info = QJsonDocument::fromJson(reqFile.readAll());
-    reqFile.close();
-    if (info["requests"].Null) errorLog("The search query file is empty", true);
+
+    file.write(info.toJson(QJsonDocument::Indented));
+    file.close();
 }

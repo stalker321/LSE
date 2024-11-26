@@ -14,8 +14,6 @@ class DisplayMessage : public QObject {
 public:
     DisplayMessage();
     ~DisplayMessage();
-    void errorMessage();
-    void clearConsol();
 private:
     double display = false;
     QString cpu;
@@ -25,11 +23,12 @@ private:
     QByteArray timeStartProgramm;
     void programInfoMessage();
 private slots:
-    // void baseInfo();
+    void displayList();
     void displayInfo();
     void hellpInfo();
     void resources();
     void mainDisplayInfo();
+    void displayFunctionMessage(QString message);
 };
 
 #endif // PROGRAMMESSAGE_H

@@ -12,10 +12,19 @@ private slots:
     void userInput();
 signals:
     void exit();
+//standard information
     void hint();
     void main();
     void infoMessage();
-    void base(QString path);
+//
+    void response(int);
+    void test(QString);
+    void base(QString);
+//blacklist
+    void list();
+//Signals for editing the blacklist
+    void addWord(QString);
+    void deleteWord(QString);
 };
 
 #endif // INTERACTION_H

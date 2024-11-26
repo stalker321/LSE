@@ -6,7 +6,7 @@ std::mutex engineMut;
 void MainSearchEngine::dataOutput (History* staticHistory, DocumentBase* staticSearchArchive,
                        QString req, int idRequest) {
     SearchServer *searchServer = new SearchServer;
-    searchServer->createresponce(req, staticSearchArchive);
+    searchServer->createResponce(req, staticSearchArchive);
 //json
     auto &searchResult = searchServer->getSearchResponse();
     QString numRequest ("request");
@@ -29,6 +29,25 @@ MainSearchEngine::MainSearchEngine (QList<QString>& path, QList<QString>& format
 
 void MainSearchEngine::writeHistory () {
     history->write();
+}
+
+void MainSearchEngine::checkRequest(QString req) {
+    QElapsedTimer timer;
+    timer.start();
+    SearchServer *searchServer = new SearchServer;
+    searchServer->createResponce(req, searchArchive);
+    auto time = timer.nsecsElapsed()/1000;
+
+    QString answer;
+    answer.append(QString("Request processing time: %1 us\n").arg(time));
+    auto response = searchServer->getSearchResponse();
+    for (auto i = response.begin(); i != response.end(); i++) {
+        answer.append(QString("id - %1 relevance - %2\n")
+                          .arg(i.value(), 4)
+                          .arg(i.key(), 5, 'f', 4));
+    }
+    delete (searchServer);
+    emit getMessage(answer);
 }
 
 MainSearchEngine::~MainSearchEngine() {

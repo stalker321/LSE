@@ -30,18 +30,18 @@ int getAppMemUsage() {
     return pmc.WorkingSetSize/toMegabytes;
 }
 
-
+//it works in a parallel stream
 void memoryInfo (QElapsedTimer& timer) {
     MEMORYSTATUSEX statusEx;
-    std::cout <<  "\033[1;32m";
-    std::cout << "██████░ " <<"RAM info: \n";
-    std::cout << "██░  ██░" << "The total amount of memory \033[1;33m" << getTotalMem(statusEx) << "\033[1;32m MB\n";
-    std::cout << "██████░ " << "The amount of free memory \033[1;33m" << getUnusedMemory(statusEx) << "\033[1;32m MB\n";
-    std::cout << "██░  ██░" << "Memory used by the program \033[1;33m" << getAppMemUsage() << "\033[1;32m MB\n";
-    std::cout << "██░  ██░" << "\033[1;32mProgram working time: \033[1;33m" << timer.elapsed()/1000 << "\033[1;32m s\033[0m\n";
+    std::wcout << L"\033[1;32m";
+    std::wcout << L"██████░ " <<"RAM info: \n";
+    std::wcout << L"██░  ██░" << "The total amount of memory \033[1;33m" << getTotalMem(statusEx) << "\033[1;32m MB\n";
+    std::wcout << L"██████░ " << "The amount of free memory \033[1;33m" << getUnusedMemory(statusEx) << "\033[1;32m MB\n";
+    std::wcout << L"██░  ██░" << "Memory used by the program \033[1;33m" << getAppMemUsage() << "\033[1;32m MB\n";
+    std::wcout << L"██░  ██░" << "\033[1;32mProgram working time: \033[1;33m" << timer.elapsed()/1000 << "\033[1;32m s\033[0m\n";
 }
 
-
+//computer information
 QString getCPUInfo() {
     QString cpu;
     QProcess process;
@@ -69,12 +69,12 @@ QString getRAMInfo() {
     ram = process.readAllStandardOutput().trimmed();
     return ram;
 }
+//
 
 //Display message
 DisplayMessage::DisplayMessage () {
     timeStartProgramm = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss").toUtf8();
     timer.start();
-    system("chcp 65001 > nul");
     QFile programInfo("programInfo.txt");
     if (!programInfo.open(QIODevice::ReadOnly)) {
         errorLog("Error opening file information");
@@ -86,21 +86,21 @@ DisplayMessage::DisplayMessage () {
 }
 
 void DisplayMessage::programInfoMessage () {
-    printf("\033c");
-    std::cout << "\033[1;32m" << info.toStdString() << "\033[0m\n";
+    std::wcout << "\033c";
+    std::wcout << L"\033[1;32m" << info.toStdString().c_str() << "\033[0m\n";
 }
 
 void DisplayMessage::mainDisplayInfo() {
     display = false;
     programInfoMessage();
-    std::cout << "\033[1;32mThe program started \033[1;33m" << timeStartProgramm.toStdString() << "\033[0m\n";
+    std::wcout << L"\033[1;32mThe program started \033[1;33m" << timeStartProgramm.toStdString().c_str() << "\033[0m\n";
     if (!cpu.toStdString().empty()) {
-        std::cout << "\033[1;32mCPU: \033[1;33m\n" << cpu.toStdString() << "\033[0m\n";
+        std::wcout << L"\033[1;32mCPU: \033[1;33m\n" << cpu.toStdString().c_str() << "\033[0m\n";
     }
     if (!ram.toStdString().empty()) {
-        std::cout << "\033[1;32mRAM: \033[1;33m\n" << ram.toStdString() << "\033[0m\n";
+        std::wcout << L"\033[1;32mRAM: \033[1;33m\n" << ram.toStdString().c_str() << "\033[0m\n";
     }
-    std::cout << "Enter \033[1;33m?\033[0m for more information\n";
+    std::wcout << L"Enter \033[1;33m?\033[0m for more information\n";
 }
 
 void DisplayMessage::resources () {
@@ -122,12 +122,32 @@ void DisplayMessage::displayInfo() {
 void DisplayMessage::hellpInfo() {
     display = false;
     programInfoMessage();
-    std::cout <<"\033[1;32m██░  ██░ \033[1;33m?\033[1;32m :: help | displays the available commands\n";
-    std::cout <<"\033[1;32m██░  ██░ \033[1;33mi\033[1;32m :: info | displays information about the resources used\n";
-    std::cout <<"\033[1;32m███████░ \033[1;33mb\033[1;32m :: base | add a file to the database\n";
-    std::cout <<"\033[1;32m██░  ██░ \033[1;33mm\033[1;32m :: main | Output of the initial information\n";
-    std::cout <<"\033[1;32m██░  ██░ \033[1;33me\033[1;32m :: exit | exiting the program\033[0m\n";
+    std::wcout <<L"\033[1;32m██░  ██░ \033[1;33m?\033[1;32m :: help  | displays the available commands\n";
+    std::wcout <<L"\033[1;32m██░  ██░ \033[1;33mi\033[1;32m :: info  | displays information about the resources used\n";
+    std::wcout <<L"\033[1;32m███████░ \033[1;33mb\033[1;32m :: base  | add a file to the database\n";
+    std::wcout <<L"\033[1;32m██░  ██░ \033[1;33mm\033[1;32m :: main  | Output of the initial information\n";
+    std::wcout <<L"\033[1;32m██░  ██░ \033[1;33mt\033[1;32m :: test  | verification by request (displayed in the history)\033[0m\n";
+    std::wcout <<L"\033[1;32m         \033[1;33mr\033[1;32m :: reply | set the maximum value of the output responses\033[0m\n";
+    std::wcout <<L"\033[1;32m         \033[1;33ml\033[1;32m :: list  | view/edit the blacklist\033[0m\n";
+    std::wcout <<L"\033[1;32m         \033[1;33me\033[1;32m :: exit  | exiting the program\033[0m\n";
 }
 
-DisplayMessage::~DisplayMessage(){
+void DisplayMessage::displayList() {
+    std::int8_t length = 0;
+    for (const auto &i : stopWord) {
+        std::wcout << i.toStdWString() << " ";
+        length++;
+        if (!(length < 5)) {
+            std::wcout << std::endl;
+            length = 0;
+        }
+    }
+    std::wcout << std::endl;
+    std::wcout << "Select the desired action a/d (add/delete word): ";
 }
+
+void DisplayMessage::displayFunctionMessage(QString message) {
+    std::wcout << L"\033[1;31m" << message.toStdWString() << "\033[0m";
+}
+
+DisplayMessage::~DisplayMessage(){}

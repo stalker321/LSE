@@ -1,8 +1,4 @@
 #include "WorkingWithJson.h"
-#include <QJsonObject>
-#include <QJsonArray>
-#include <QMap>
-#include <QDebug>
 
 void History::setSearchEmpty(bool empty, QString request) {
     QJsonObject result;

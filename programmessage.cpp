@@ -69,9 +69,7 @@ QString getRAMInfo() {
     ram = process.readAllStandardOutput().trimmed();
     return ram;
 }
-//
-
-//Display message
+//start
 DisplayMessage::DisplayMessage () {
     timeStartProgramm = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss").toUtf8();
     timer.start();
@@ -84,12 +82,12 @@ DisplayMessage::DisplayMessage () {
     ram = getRAMInfo();
     mainDisplayInfo();
 }
-
+//information about the program
 void DisplayMessage::programInfoMessage () {
     std::wcout << "\033c";
     std::wcout << L"\033[1;32m" << info.toStdString().c_str() << "\033[0m\n";
 }
-
+//The main message
 void DisplayMessage::mainDisplayInfo() {
     display = false;
     programInfoMessage();
@@ -102,7 +100,7 @@ void DisplayMessage::mainDisplayInfo() {
     }
     std::wcout << L"Enter \033[1;33m?\033[0m for more information\n";
 }
-
+//starting an independent stream to display resources.
 void DisplayMessage::resources () {
     std::thread([this]() {
         while (true) {
@@ -114,11 +112,11 @@ void DisplayMessage::resources () {
         }
     }).detach();
 }
-
+//enabling the resource display flag
 void DisplayMessage::displayInfo() {
     display = true;
 }
-
+//hotkey hint
 void DisplayMessage::hellpInfo() {
     display = false;
     programInfoMessage();
@@ -131,7 +129,7 @@ void DisplayMessage::hellpInfo() {
     std::wcout <<L"\033[1;32m         \033[1;33ml\033[1;32m :: list  | view/edit the blacklist\033[0m\n";
     std::wcout <<L"\033[1;32m         \033[1;33me\033[1;32m :: exit  | exiting the program\033[0m\n";
 }
-
+//displaying the blacklist
 void DisplayMessage::displayList() {
     std::int8_t length = 0;
     for (const auto &i : stopWord) {
@@ -145,9 +143,9 @@ void DisplayMessage::displayList() {
     std::wcout << std::endl;
     std::wcout << "Select the desired action a/d (add/delete word): ";
 }
-
+//displaying program messages
 void DisplayMessage::displayFunctionMessage(QString message) {
     std::wcout << L"\033[1;31m" << message.toStdWString() << "\033[0m";
 }
-
+//
 DisplayMessage::~DisplayMessage(){}

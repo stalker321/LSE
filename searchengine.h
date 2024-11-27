@@ -64,7 +64,11 @@ public:
     History* getHistory() {
         return history;
     }
+    int &getNumRequest(){
+        return numRequest;
+    }
 protected:
+    int numRequest = 0;
     History* history = new History;
     DocumentBase* searchArchive = nullptr;
 private slots:

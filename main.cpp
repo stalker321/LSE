@@ -37,6 +37,7 @@ int main(int argc, char *argv[]){
     QObject::connect(input,            SIGNAL(started()),              interaction, SLOT(userInput()));
     QObject::connect(message,          SIGNAL(started()),           displayMessage, SLOT(resources()));
 //
+    input->start();
     message->start();
 // json
     SistemJson* info = new SistemJson;
@@ -63,7 +64,7 @@ int main(int argc, char *argv[]){
     request->setSearchQuery(requestsPath);
 //processing requests from a file
     QList<QFuture<void>> multipleSearch;
-    int counterRequest = 0;
+    int &counterRequest = mainSearchEngine->getNumRequest();
     for (auto &i : request->getRequests()["requests"].toArray().toVariantList()) {
         multipleSearch.append(QtConcurrent::run([=](){
             MainSearchEngine::dataOutput(mainSearchEngine->getHistory(), mainSearchEngine->getSearchArchive(),
@@ -75,8 +76,7 @@ int main(int argc, char *argv[]){
 //delete requests (optional)
     delete (request);
 //launching network requests
-//start input
-    input->start();
+    NetworkRequests *networkRequests = new NetworkRequests(mainSearchEngine);
 //connect
     //blacklist
     QObject::connect(interaction,      SIGNAL(list()),              displayMessage, SLOT(displayList()));
@@ -105,13 +105,16 @@ int main(int argc, char *argv[]){
     });
     //delete
     QObject::connect(&qa, &QCoreApplication::aboutToQuit, qApp, [info, mainSearchEngine, displayMessage,
-                                                                 interaction, blackList] () {
+                                                                 interaction, blackList, networkRequests] () {
         delete(info);
         delete(blackList);
         delete(mainSearchEngine);
+        delete(networkRequests);
         delete(displayMessage);
         delete(interaction);
     });
+
+//start input
 
     return qa.exec();
 }

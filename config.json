@@ -2,7 +2,7 @@
   "config": {
   "name": "FinalProject",
   "version": "1.0.0",
-  "max_responses": 5
+  "max_responses": 0
   },
   "files":  ["./resources/"]
 }

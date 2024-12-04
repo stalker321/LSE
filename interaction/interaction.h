@@ -16,6 +16,7 @@ signals:
     void hint();
     void main();
     void infoMessage();
+    void infoErrorLog();
 //
     void response(int);
     void test(QString);

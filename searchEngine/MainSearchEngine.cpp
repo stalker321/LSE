@@ -32,6 +32,7 @@ void MainSearchEngine::writeHistory () {
 }
 
 void MainSearchEngine::checkRequest(QString req) {
+    if (req.isEmpty()) return;
     QElapsedTimer timer;
     timer.start();
     SearchServer *searchServer = new SearchServer;

@@ -27,6 +27,7 @@ private slots:
     void hellpInfo();
     void resources();
     void mainDisplayInfo();
+    void displayErrorLog();
     void displayFunctionMessage(QString message);
 };
 

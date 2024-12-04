@@ -1,5 +1,45 @@
 #include "interaction.h"
+//add base
+std::wstring addBase() {
+    std::wstring path;
+    std::wcout << "Enter the path to the file: ";
+    std::wcin >> path;
+    return path;
+}
+//set the num responses
+int inputNumResposes() {
+    std::wstring num;
+    std::wcout << "specify the number of responses to be displayed, enter\033[1;33m 0 \033[0mif you want to make the current number constant: ";
+    std::wcin >> num;
+    bool flagNum = true;
+    if (num.empty()) flagNum = false;
+    for (const auto &i : num) {
+        if (!std::isdigit(i)) flagNum = false;
+    }
+    if (flagNum) return std::stoi(num);
+    return -1;
+}
+//entering a test query
+std::wstring testQuery(){
+    std::wcin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::wstring testReq;
+    std::wcout << "Enter a test query: ";
+    std::getline(std::wcin, testReq);
+    return testReq;
+}
+//blacklist
+wchar_t action () {
+    wchar_t input;
+    std::wcin >> input;
+    return input;
+}
+std::wstring word() {
+    std::wstring input;
+    std::wcin >> input;
+    return input;
+}
 
+//interaction
 Interaction::Interaction() {}
 
 void Interaction::userInput() {
@@ -8,57 +48,52 @@ void Interaction::userInput() {
 //input
         std::wcin >> input;
         std::wcin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        switch (input) {
 //exit
-        if (input == 'e') emit exit();
+        case 'e':
+            emit exit();
+            break;
 //info
-        else if (input == '?') emit hint();
-        else if (input == 'm') emit main();
-        else if (input == 'i') emit infoMessage();
+        case '?':
+            emit hint();
+            break;
+        case 'm':
+            emit main();
+            break;
+        case 'i':
+            emit infoMessage();
+            break;
 //add base
-        else if (input == 'b') {
-            std::wstring path;
-            std::wcout << "Enter the path to the file: ";
-            std::wcin >> path;
-            std::wcin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            if (!path.empty()) {
-                emit base(QString::fromStdWString(path));
-            }
-        }
+        case 'b':
+            emit base(QString::fromStdWString(addBase()));
+            break;
 //set the number of output responses
-        else if (input == 'r') {
-            std::wstring num;
-            std::wcout << "specify the number of responses to be displayed, enter\033[1;33m 0 \033[0mif you want to make the current number constant: ";
-            std::wcin >> num;
-            std::wcin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            bool flagNum = true;
-            if (num.empty()) flagNum = false;
-            for (const auto &i : num) {
-                if (!std::isdigit(i)) flagNum = false;
-            }
-            if (flagNum) emit response(std::stoi(num));
-        }
-//checking the search
-        else if (input == 't') {
-            std::wstring testReq;
-            std::wcout << "Enter a test query: ";
-            std::wcin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            std::getline(std::wcin, testReq);
-            if (!testReq.empty()) {
-                emit test(QString::fromStdWString(testReq));
-            }
-        }
+        case 'r':
+            emit response(inputNumResposes());
+            break;
+//test the search
+        case 't':
+            emit test(QString::fromStdWString(testQuery()));
+            break;
 //blacklist
-        else if (input == 'l') {
+        case 'l':
             emit list();
-            std::wcin >> input;
-            std::wcin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            if (input == 'a' || input == 'd') {
-                std::wstring word;
-                std::wcin >> word;
-                std::wcin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                if (input == 'a') emit addWord(QString::fromStdWString(word));
-                else emit deleteWord(QString::fromStdWString(word));
+            input = action();
+            if (input == 'a'){
+                std::wcout << "Enter the word you want to add: ";
+                emit addWord(QString::fromStdWString(word()));
+                break;
+            } else if (input == 'd'){
+                std::wcout << "Enter the word you want to delete: ";
+                emit deleteWord(QString::fromStdWString(word()));
+                break;
             }
+            break;
+        case 'f':
+            emit infoErrorLog();
+            break;
+        default:
+            break;
         }
     }
 }

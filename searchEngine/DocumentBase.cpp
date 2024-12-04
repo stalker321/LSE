@@ -75,7 +75,7 @@ void DocumentBase::setBase (QString& path, QList<QString>& format) {
     }
     paths.append(searchExtension(fs::path(path.toStdString()), format));
     if (paths.empty()) {
-        errorLog("Incorrect file path", false);
+        errorLog("The folder is empty", false);
         return;
     }
     searchFile(paths, id, docBase);
@@ -93,13 +93,13 @@ DocumentBase::DocumentBase (QList<QString>& path, QList<QString>& format) {
     for(auto &p : path) {
         if (!fs::exists(p.toStdString())) {
             errorLog("Incorrect file path", false);
-            continue;
+            return;
         }
         paths.append(searchExtension(fs::path(p.toStdString()), format));
-    }
-    if (paths.empty()) {
-        errorLog("Incorrect file path", true);
-        return;
+        if (paths.empty()) {
+            errorLog("The folder is empty", false);
+            return;
+        }
     }
     searchFile(paths, id, docBase);
     QList<std::thread*> readIndexBase;

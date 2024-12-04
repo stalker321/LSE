@@ -66,6 +66,7 @@ public:
     void setRecordingResponses (QString request,
                                QMultiMap<double, int> result);
     void write ();
+    QJsonDocument getAnswer (QString req);
 //get
     const QJsonObject &getCollectHistory() {
         return collectHistory;

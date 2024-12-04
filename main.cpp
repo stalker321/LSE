@@ -9,7 +9,7 @@ QList<QString> format {".txt", ".rft"};
 QString requestsPath  ("requests.json");
 QString stopWordPath  ("stopWord.json");
 QString configPath      ("config.json");
-QString version               ("1.0.0");
+QString version               ("1.1.0");
 
 //global variable
 QList<QString> stopWord;
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
 //connecting to parallel threads at startup
     QObject::connect(input,            SIGNAL(started()),              interaction, SLOT(userInput()));
     QObject::connect(message,          SIGNAL(started()),           displayMessage, SLOT(resources()));
-//
+//start input
     input->start();
     message->start();
 // json
@@ -58,8 +58,6 @@ int main(int argc, char *argv[]){
     }
 //search
     MainSearchEngine *mainSearchEngine = new MainSearchEngine(path, format);
-    QString pathNext ("nextLevelPlay.txt");
-    mainSearchEngine->addBase(pathNext, format, mainSearchEngine->getSearchArchive());
 //json
     request->setSearchQuery(requestsPath);
 //processing requests from a file
@@ -91,17 +89,22 @@ int main(int argc, char *argv[]){
     QObject::connect(interaction,      SIGNAL(infoMessage()),       displayMessage, SLOT(displayInfo()));
     QObject::connect(interaction,      SIGNAL(hint()),              displayMessage, SLOT(hellpInfo()));
     QObject::connect(interaction,      SIGNAL(main()),              displayMessage, SLOT(mainDisplayInfo()));
+    QObject::connect(interaction,      SIGNAL(infoErrorLog()),      displayMessage, SLOT(displayErrorLog()));
     //test request
     QObject::connect(interaction,      SIGNAL(test(QString)),     mainSearchEngine, SLOT(checkRequest(QString)));
     //exit
     QObject::connect(interaction,      SIGNAL(exit()),                         &qa, SLOT(quit()), Qt::QueuedConnection);
+    //setting the number of responses
     QObject::connect(interaction,      &Interaction::response, [info](int max) {
         if (max == 0) info->setMaxResponsec(numberOfResponses);
         else if (max < 0) return;
         else numberOfResponses = max;
     });
+    //updating the database
     QObject::connect(interaction, &Interaction::base, qApp, [mainSearchEngine](QString path){
-        mainSearchEngine->addBase(path, format, mainSearchEngine->getSearchArchive());
+        if (!path.isEmpty()){
+            mainSearchEngine->addBase(path, format, mainSearchEngine->getSearchArchive());
+        }
     });
     //delete
     QObject::connect(&qa, &QCoreApplication::aboutToQuit, qApp, [info, mainSearchEngine, displayMessage,
@@ -113,8 +116,6 @@ int main(int argc, char *argv[]){
         delete(displayMessage);
         delete(interaction);
     });
-
-//start input
 
     return qa.exec();
 }

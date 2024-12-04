@@ -11,6 +11,6 @@ void errorLog (QString errorMessage, bool closeProgram) {
     log.write(time + " - " + errorMessage.toStdString().c_str() + '\n');
     log.close();
     //I don't like the way it looks, I'll redo it later (maybe)
-    std::wcout << "\033[1;31mNew error message!\n\033[0m";
+    std::wcout << "\033[1;31mNew error message!\033[0m\n";
     if (closeProgram) exit (1);
 }

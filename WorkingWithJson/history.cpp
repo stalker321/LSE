@@ -44,6 +44,11 @@ void History::setRecordingResponses(QString request, QMultiMap<double, int> resu
     collectHistory["answer"] = answerObject;
 }
 
+QJsonDocument History::getAnswer (QString req) {
+    QJsonObject object = collectHistory["answer"][req].toObject();
+    return QJsonDocument (object);
+}
+
 void History::write() {
     QFile responseRequest("answer.json");
     if (!responseRequest.open(QIODevice::WriteOnly)) {

@@ -23,25 +23,27 @@ void NetworkRequests::incomingConnection(qintptr socketRequest) {
     if (socket->setSocketDescriptor(socketRequest)) {
         std::wcout << "Client connected \n";
 
-        //Reading the data
+//Reading the data
         connect(socket, &QTcpSocket::readyRead, [socket, this]() {
             QByteArray requestData = socket->readAll();
             QString message = QString::fromUtf8(requestData);
             // std::wcout << L"Received from client:" << message.toStdWString() << std::endl;
-
+//forming a response
+            int numAnswer = engine->getNumRequest();
             QtConcurrent::run([=](){
                 MainSearchEngine::dataOutput(engine->getHistory(), engine->getSearchArchive(),
                                   message, engine->getNumRequest());
-            });
-            engine->getNumRequest()++;
+                engine->getNumRequest()++;
+            }).waitForFinished();
+            auto jsonDoc = engine->getHistory()->getAnswer(QString("request") + QString("%1").arg(numAnswer));
 
-            //response to the client
-            QString response = "Hello from server!";
-            socket->write(response.toUtf8());
+//response to the client
+            QByteArray response = jsonDoc.toJson(QJsonDocument::Compact);
+            socket->write(response);
             socket->flush();
         });
 
-        //Closing the connection
+//Closing the connection
         connect(socket, &QTcpSocket::disconnected, [socket]() {
             std::wcout << "Client disconnected:" << socket->peerAddress().toString().toStdWString() << std::endl;
             socket->deleteLater();

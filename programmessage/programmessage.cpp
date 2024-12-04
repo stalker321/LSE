@@ -3,12 +3,26 @@
 
 #include "programmessage.h"
 
+//operating system checks
+#if defined(_WIN32) || defined(_WIN64)
+#define OS_WINDOWS
+#elif defined(__linux__)
+#else
+#define OS_UNKNOWN
+#endif
+
+
+//windows
+#if defined(OS_WINDOWS)
+#pragma comment( lib, "psapi.lib" )
+
 int toMegabytes (1048576);
 
 #define CHECK_POWERSHELL() \
     (system("powershell -Command \"exit\"") == 0)
 
-int getTotalMem (MEMORYSTATUSEX &statusEx) {
+int getTotalMem () {
+    MEMORYSTATUSEX statusEx;
     statusEx.dwLength = sizeof(statusEx);
     GlobalMemoryStatusEx(&statusEx);
     unsigned long long totalMem = statusEx.ullTotalPhys;
@@ -16,7 +30,8 @@ int getTotalMem (MEMORYSTATUSEX &statusEx) {
     return totalMem/toMegabytes;
 }
 
-int getUnusedMemory (MEMORYSTATUSEX &statusEx) {
+int getUnusedMemory () {
+    MEMORYSTATUSEX statusEx;
     statusEx.dwLength = sizeof(statusEx);
     GlobalMemoryStatusEx(&statusEx);
     unsigned long long totalMem = statusEx.ullAvailPhys;
@@ -30,13 +45,85 @@ int getAppMemUsage() {
     return pmc.WorkingSetSize/toMegabytes;
 }
 
+#endif
+
+//linux
+#if defined(OS_LINUX)
+
+#include <fstream>
+int getTotalMem() {
+    std::ifstream meminfo("/proc/meminfo");
+    std::string line;
+    while (std::getline(meminfo, line)) {
+        if (line.find("MemTotal:") == 0) {
+            unsigned long long memKb;
+            sscanf(line.c_str(), "MemTotal: %llu kB", &memKb);
+            return memKb / 1024;
+        }
+    }
+    return -1;
+}
+
+int getAppMemUsage() {
+    std::ifstream statusFile("/proc/self/status");
+    std::string line;
+    while (std::getline(statusFile, line)) {
+        if (line.find("VmRSS:") == 0) {
+            unsigned long long memKb;
+            sscanf(line.c_str(), "VmRSS: %llu kB", &memKb);
+            return memKb / 1024;
+        }
+    }
+    return -1;
+}
+
+int getUnusedMemory() {
+    std::ifstream meminfo("/proc/meminfo");
+    if (!meminfo.is_open()) {
+        return -1;
+    }
+
+    std::string line;
+    unsigned long long freeMemKb = 0;
+
+    // Считываем строки из /proc/meminfo
+    while (std::getline(meminfo, line)) {
+        if (line.find("MemAvailable:") == 0) {
+            std::istringstream iss(line);
+            std::string key;
+            iss >> key >> freeMemKb;
+            break;
+        }
+    }
+
+    meminfo.close();
+
+    const unsigned int toMegabytes = 1024;
+    return static_cast<int>(freeMemKb / toMegabytes);
+}
+
+#endif
+
+#if defined(OS_UNKNOWN)
+int getTotalMem (MEMORYSTATUSEX &statusEx) {
+    return -1;
+}
+
+int getUnusedMemory (MEMORYSTATUSEX &statusEx) {
+    return -1;
+}
+
+int getAppMemUsage() {
+    return -1;
+}
+#endif
+
 //it works in a parallel stream
 void memoryInfo (QElapsedTimer& timer) {
-    MEMORYSTATUSEX statusEx;
     std::wcout << L"\033[1;32m";
     std::wcout << L"██████░ " <<"RAM info: \n";
-    std::wcout << L"██░  ██░" << "The total amount of memory \033[1;33m" << getTotalMem(statusEx) << "\033[1;32m MB\n";
-    std::wcout << L"██████░ " << "The amount of free memory \033[1;33m" << getUnusedMemory(statusEx) << "\033[1;32m MB\n";
+    std::wcout << L"██░  ██░" << "The total amount of memory \033[1;33m" << getTotalMem() << "\033[1;32m MB\n";
+    std::wcout << L"██████░ " << "The amount of free memory \033[1;33m" << getUnusedMemory() << "\033[1;32m MB\n";
     std::wcout << L"██░  ██░" << "Memory used by the program \033[1;33m" << getAppMemUsage() << "\033[1;32m MB\n";
     std::wcout << L"██░  ██░" << "\033[1;32mProgram working time: \033[1;33m" << timer.elapsed()/1000 << "\033[1;32m s\033[0m\n";
 }
@@ -125,8 +212,9 @@ void DisplayMessage::hellpInfo() {
     std::wcout <<L"\033[1;32m███████░ \033[1;33mb\033[1;32m :: base  | add a file to the database\n";
     std::wcout <<L"\033[1;32m██░  ██░ \033[1;33mm\033[1;32m :: main  | output of the initial information\n";
     std::wcout <<L"\033[1;32m██░  ██░ \033[1;33mt\033[1;32m :: test  | verification by request (not displayed in the history)\033[0m\n";
-    std::wcout <<L"\033[1;32m         \033[1;33mr\033[1;32m :: reply | set the maximum value of the output responses\033[0m\n";
     std::wcout <<L"\033[1;32m         \033[1;33ml\033[1;32m :: list  | view/edit the blacklist\033[0m\n";
+    std::wcout <<L"\033[1;32m         \033[1;33mr\033[1;32m :: reply | set the maximum value of the output responses\033[0m\n";
+    std::wcout <<L"\033[1;32m         \033[1;33mf\033[1;32m :: fault | view the error list\033[0m\n";
     std::wcout <<L"\033[1;32m         \033[1;33me\033[1;32m :: exit  | exiting the program\033[0m\n";
 }
 //displaying the blacklist
@@ -145,7 +233,31 @@ void DisplayMessage::displayList() {
 }
 //displaying program messages
 void DisplayMessage::displayFunctionMessage(QString message) {
-    std::wcout << L"\033[1;31m" << message.toStdWString() << "\033[0m";
+    std::wcout << L"\033[1;31m" << message.toStdWString() << "\033[0m\n";
 }
+
+//display error log
+void DisplayMessage::displayErrorLog(){
+    QFile log ("ErrorLog.txt");
+    QString message;
+
+    if (!log.open(QIODevice::ReadOnly)) {
+        message = "The file could not be read ErrorLog.txt";
+        displayFunctionMessage(message);
+        return;
+    }
+
+    if (log.size() == 0) {
+        message = "The error log is empty";
+        log.close();
+        displayFunctionMessage(message);
+        return;
+    }
+    message = log.readAll();
+    log.close();
+    displayFunctionMessage(message);
+    return;
+}
+
 //
 DisplayMessage::~DisplayMessage(){}

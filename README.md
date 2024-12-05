@@ -37,6 +37,9 @@ If errors occurred during the execution of the program, their list can be viewed
 <br>Use new versions of **MinGW**, because an error may occur in older versions when working with std::filesystem.
 
 ## Update
+- v1.1.2
+- - Work to improve OS compatibility
+##
 - v1.1.1
 - - fixed the order in which responses are displayed/saved.
 ##

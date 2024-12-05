@@ -13,7 +13,7 @@
 #include <QByteArray>
 #include <QJsonObject>
 #include <QJsonDocument>
-// #include <QtConcurrent>
+
 #include "errormessage.h"
 
 extern QList<QString> stopWord;

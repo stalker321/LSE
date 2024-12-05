@@ -1,2 +1,2 @@
-LSE console [version 1.1.1]
+LSE console [version 1.1.2]
 Copyright (c) 2024 Shcherbakov

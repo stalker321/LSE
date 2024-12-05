@@ -1,5 +1,5 @@
 #include <thread>
-#include <chrono>
+
 
 #include "programmessage.h"
 
@@ -15,7 +15,8 @@
 //windows
 #if defined(OS_WINDOWS)
 #pragma comment( lib, "psapi.lib" )
-
+#include <windows.h>
+#include <psapi.h>
 int toMegabytes (1048576);
 
 #define CHECK_POWERSHELL() \

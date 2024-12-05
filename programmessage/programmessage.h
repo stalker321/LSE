@@ -1,10 +1,8 @@
 #ifndef PROGRAMMESSAGE_H
 #define PROGRAMMESSAGE_H
 #include <QElapsedTimer>
-#include <windows.h>
 #include <QProcess>
 #include <iostream>
-#include <psapi.h>
 
 #include "searchEngine.h"
 

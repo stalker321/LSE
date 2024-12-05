@@ -1,15 +1,20 @@
-#include <fcntl.h>
-#include <io.h>
+#include <locale>
 
 #include "networkrequests.h"
 #include "programmessage.h"
 #include "interaction.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 QList<QString> format {".txt", ".rft"};
 QString requestsPath  ("requests.json");
 QString stopWordPath  ("stopWord.json");
 QString configPath      ("config.json");
-QString version               ("1.1.1");
+QString version               ("1.1.2");
 
 //global variable
 QList<QString> stopWord;
@@ -17,11 +22,15 @@ int numberOfResponses (1);
 
 int main(int argc, char *argv[]){
 //preparation
+#if defined(_WIN32) || defined(_WIN64)
     _setmode(_fileno(stdout), _O_U16TEXT);
     _setmode(_fileno(stdin), _O_U16TEXT);
 
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
+#else
+    std::locale::global(std::locale("ru_RU.UTF-8"));
+#endif
 //start
     QCoreApplication qa (argc, argv);
 //

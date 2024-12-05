@@ -38,10 +38,10 @@ If errors occurred during the execution of the program, their list can be viewed
 
 ## Update
 - v1.1.2
-- - Work to improve OS compatibility
+- - Work to improve OS compatibility.
 ##
 - v1.1.1
-- - fixed the order in which responses are displayed/saved.
+- - Fixed the order in which responses are displayed/saved.
 ##
 - v1.1.0
 - - Added error log output via the console;

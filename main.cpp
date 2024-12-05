@@ -9,7 +9,7 @@ QList<QString> format {".txt", ".rft"};
 QString requestsPath  ("requests.json");
 QString stopWordPath  ("stopWord.json");
 QString configPath      ("config.json");
-QString version               ("1.1.0");
+QString version               ("1.1.1");
 
 //global variable
 QList<QString> stopWord;

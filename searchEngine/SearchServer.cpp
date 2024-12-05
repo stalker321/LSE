@@ -20,10 +20,7 @@ void SearchServer::createResponce (QString& req, DocumentBase* searchArchive) {
     }
     if (intermediateSearch.empty()) return;
 // forming a response
-    int numberResponse (0);
-    for (auto i = intermediateSearch.begin(); i != intermediateSearch.end(); i++) {
-        if (numberResponse < numberOfResponses) numberResponse++;
-        else break;
+    for (auto i = intermediateSearch.begin(); i != intermediateSearch.end();i++) {
         searchResponse.insert(float(i.value())/max, i.key());
     }
 }

@@ -44,7 +44,7 @@ If errors occurred during the execution of the program, their list can be viewed
 - - А little optimization in the output of responses;
 ##
 - v1.1.2
-- - Work to improve OS compatibility
+- - Work to improve OS compatibility.
 ##
 - v1.1.1
 - - Fixed the order in which responses are displayed/saved.

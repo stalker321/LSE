@@ -10,7 +10,7 @@ void errorLog (QString errorMessage, bool closeProgram) {
     QByteArray time (QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss").toUtf8());
     log.write(time + " - " + errorMessage.toStdString().c_str() + '\n');
     log.close();
-    //I don't like the way it looks, I'll redo it later (maybe)
+//I don't like the way it looks, I'll redo it later (maybe)
     std::wcout << "\033[1;31mNew error message!\033[0m\n";
     if (closeProgram) exit (1);
 }

@@ -1,7 +1,6 @@
 #ifndef SEARCHENGINE_H
 #define SEARCHENGINE_H
 
-#include <Thread>
 #include <iostream>
 #include <filesystem>
 #include <QtConcurrent>
@@ -12,7 +11,7 @@
 namespace fs = std::filesystem;
 //global variable
 extern QList<QString> stopWord;
-extern int numberOfResponses;
+// extern int numberOfResponses;
 
 struct FileInfo {
     int id;
@@ -40,11 +39,11 @@ protected:
 struct SearchServer {
     void createResponce (QString& req, DocumentBase* searchArchive);
 //get
-    const QMultiMap<double,int> getSearchResponse(){
+    const QMap<double, QVector<int>> getSearchResponse(){
         return searchResponse;
     }
 protected:
-    QMultiMap<double,int> searchResponse;
+    QMap<double, QVector<int>> searchResponse;
 };
 
 class MainSearchEngine: public QObject {
@@ -55,10 +54,7 @@ public:
     MainSearchEngine (QList<QString>& path, QList<QString>& format);
 //write history (recording using QJson)
     void writeHistory();
-//multithreading
-    static void dataOutput (History* staticHistory, DocumentBase* staticSearchArchive,
-                           QString req, int idRequest);
-    static void addBase (QString path, QList<QString>& format, DocumentBase* searchArchive);
+    void addBase (QString path, QList<QString>& format, DocumentBase* searchArchive);
 //get
     DocumentBase* getSearchArchive () {
         return searchArchive;
@@ -73,6 +69,8 @@ protected:
     int numRequest = 0;
     History* history = new History;
     DocumentBase* searchArchive = nullptr;
+public slots:
+    void beginningSearch(const QString req, int id);
 private slots:
     void checkRequest(QString req);
 signals:

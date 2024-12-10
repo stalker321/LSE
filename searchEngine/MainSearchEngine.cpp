@@ -3,19 +3,12 @@
 std::mutex engineMut;
 
 //multithreading
-void MainSearchEngine::dataOutput (History* staticHistory, DocumentBase* staticSearchArchive,
+void dataOutput (History* staticHistory, DocumentBase* staticSearchArchive,
                        QString req, int idRequest) {
     SearchServer *searchServer = new SearchServer;
     searchServer->createResponce(req, staticSearchArchive);
 //json
-    QMultiMap<double,int> searchResult;
-    int counter = 0;
-    for (auto i = searchServer->getSearchResponse().end(); i!=searchServer->getSearchResponse().begin();){
-        if (counter < numberOfResponses) counter++;
-        else break;
-        i--;
-        searchResult.insert(i.key(), i.value());
-    }
+    auto &searchResult = searchServer->getSearchResponse();
     QString numRequest ("request");
     numRequest += QString("%1").arg(idRequest);
     engineMut.lock();
@@ -51,15 +44,22 @@ void MainSearchEngine::checkRequest(QString req) {
     answer.append(QString("Request processing time: %1 us\n").arg(time));
     auto &response = searchServer->getSearchResponse();
     for (auto i = response.end(); i != response.begin();) {
-        if (counter < numberOfResponses) counter++;
-        else break;
         i--;
-        answer.append(QString("id - %1 relevance - %2\n")
-                          .arg(i.value(), 4)
-                          .arg(i.key(), 5, 'f', 4));
+        for (auto r : *i) {
+            if (counter < numberOfResponses) counter++;
+            else break;
+            answer.append(QString("id - %1 relevance - %2\n")
+                              .arg(r, 4)
+                              .arg(i.key(), 5, 'f', 4));
+        }
+        if (!(counter < numberOfResponses)) break;
     }
     delete (searchServer);
     emit getMessage(answer);
+}
+
+void MainSearchEngine::beginningSearch(const QString req, int id) {
+    dataOutput(history, searchArchive, req, id);
 }
 
 MainSearchEngine::~MainSearchEngine() {

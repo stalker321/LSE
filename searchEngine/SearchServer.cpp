@@ -1,7 +1,7 @@
 #include "searchengine.h"
 
 void SearchServer::createResponce (QString& req, DocumentBase* searchArchive) {
-    auto temp = WordIndexing::indexingWord(req, stopWord);
+    auto temp = indexingWord(req, stopWord);
 //a blank to improve relevance
     QMultiMap<int, QString> reqIndex;
     for (auto i = temp.begin(), end = temp.end(); i != end; i++){
@@ -21,6 +21,6 @@ void SearchServer::createResponce (QString& req, DocumentBase* searchArchive) {
     if (intermediateSearch.empty()) return;
 // forming a response
     for (auto i = intermediateSearch.begin(); i != intermediateSearch.end();i++) {
-        searchResponse.insert(float(i.value())/max, i.key());
+        searchResponse[float(i.value())/max].append(i.key());
     }
 }

@@ -16,6 +16,9 @@
 
 #include "errormessage.h"
 
+// global variable
+extern int numberOfResponses;
+
 extern QList<QString> stopWord;
 
 //working with json config
@@ -64,7 +67,7 @@ class History {
 public:
     void setSearchEmpty (bool empty, QString request);
     void setRecordingResponses (QString request,
-                               QMultiMap<double, int> result);
+                               QMap<double, QVector<int>> result);
     void write ();
     QJsonDocument getAnswer (QString req);
 //get

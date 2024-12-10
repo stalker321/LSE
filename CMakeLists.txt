@@ -51,6 +51,7 @@ add_executable(FinalProject
   interaction/interaction.cpp
 # Word indexing
   wordIndexing/wordIndexing.h
+  wordIndexing/wordIndexing.cpp
 )
 
 target_include_directories(FinalProject PRIVATE WorkingWithJson)

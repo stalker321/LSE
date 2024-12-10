@@ -17,7 +17,7 @@ FileInfo docIndexing (QString path, int id) {
 
     QString text = resursec.readAll();
     resursec.close();
-    indexing.textIndex = WordIndexing::indexingWord(text, stopWord);
+    indexing.textIndex = indexingWord(text, stopWord);
     return indexing;
 }
 
@@ -79,12 +79,12 @@ void DocumentBase::setBase (QString& path, QList<QString>& format) {
         return;
     }
     searchFile(paths, id, docBase);
-    QList<std::thread*> readIndexBase;
+    QList<QFuture<void>> readIndexBase;
     for (auto &i : docBase) {
-        readIndexBase.append(new std::thread(writeIndex, std::move(i), &indexBase));
+        readIndexBase.append(QtConcurrent::run(writeIndex, std::move(i), &indexBase));
         i.textIndex.clear();
     }
-    for (auto *i : readIndexBase) i->join();
+    for (auto i : readIndexBase) i.waitForFinished();
 }
 
 //doc base
@@ -102,12 +102,12 @@ DocumentBase::DocumentBase (QList<QString>& path, QList<QString>& format) {
         }
     }
     searchFile(paths, id, docBase);
-    QList<std::thread*> readIndexBase;
+    QList<QFuture<void>> readIndexBase;
     for (auto &i : docBase) {
-        readIndexBase.append(new std::thread(writeIndex, std::move(i), &indexBase));
+        readIndexBase.append(QtConcurrent::run(writeIndex, std::move(i), &indexBase));
         i.textIndex.clear();
     }
-    for (auto *i : readIndexBase) i->join();
+    for (auto i : readIndexBase) i.waitForFinished();
 }
 
 

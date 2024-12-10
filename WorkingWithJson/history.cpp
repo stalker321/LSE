@@ -14,7 +14,7 @@ void History::setSearchEmpty(bool empty, QString request) {
     collectHistory["answer"] = answerObject;
 }
 
-void History::setRecordingResponses(QString request, QMultiMap<double, int> result) {
+void History::setRecordingResponses(QString request, QMap<double, QVector<int>> result) {
     if (!collectHistory.contains("answer")) {
         collectHistory.insert("answer", QJsonObject());
     }
@@ -30,15 +30,20 @@ void History::setRecordingResponses(QString request, QMultiMap<double, int> resu
     }
 
     QJsonArray relevanceMap = requestObject["relevance"].toArray();
+    int counter = 0;
 
     for (auto a = result.end(); a != result.begin();) {
         --a;
-        QJsonObject docRankObject;
-        docRankObject["docid"] = a.value();
-        docRankObject["rank"] = (double)floorf(a.key() * 1000) / 1000;;
-        relevanceMap.append(docRankObject);
+        for (auto r : *a) {
+            if (counter < numberOfResponses) counter++;
+            else break;
+            QJsonObject docRankObject;
+            docRankObject["docid"] = r;
+            docRankObject["rank"] = (double)floorf(a.key() * 1000) / 1000;;
+            relevanceMap.append(docRankObject);
+        }
+        if (!(counter < numberOfResponses)) break;
     }
-
     requestObject["relevance"] = relevanceMap;
     answerObject[request] = requestObject;
     collectHistory["answer"] = answerObject;

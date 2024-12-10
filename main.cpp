@@ -11,10 +11,10 @@
 #endif
 
 QList<QString> format {".txt", ".rft"};
-QString requestsPath  ("requests.json");
-QString stopWordPath  ("stopWord.json");
-QString configPath      ("config.json");
-QString version               ("1.1.2");
+QString requestsPath ("requests.json");
+QString stopWordPath ("stopWord.json");
+QString configPath     ("config.json");
+QString version              ("1.1.3");
 
 //global variable
 QList<QString> stopWord;
@@ -43,8 +43,8 @@ int main(int argc, char *argv[]){
     displayMessage->moveToThread(message);
     interaction->moveToThread(input);
 //connecting to parallel threads at startup
-    QObject::connect(input,            SIGNAL(started()),              interaction, SLOT(userInput()));
-    QObject::connect(message,          SIGNAL(started()),           displayMessage, SLOT(resources()));
+    QObject::connect(input,            SIGNAL(started()),              interaction, SLOT(userInput()), Qt::SingleShotConnection);
+    QObject::connect(message,          SIGNAL(started()),           displayMessage, SLOT(resources()), Qt::SingleShotConnection);
 //start input
     input->start();
     message->start();
@@ -73,9 +73,8 @@ int main(int argc, char *argv[]){
     QList<QFuture<void>> multipleSearch;
     int &counterRequest = mainSearchEngine->getNumRequest();
     for (auto &i : request->getRequests()["requests"].toArray().toVariantList()) {
-        multipleSearch.append(QtConcurrent::run([=](){
-            MainSearchEngine::dataOutput(mainSearchEngine->getHistory(), mainSearchEngine->getSearchArchive(),
-                                         i.toString(), counterRequest);
+        multipleSearch.append(QtConcurrent::run([mainSearchEngine, i, counterRequest]() {
+            mainSearchEngine->beginningSearch(i.toString(), counterRequest);
         }));
         counterRequest++;
     }
@@ -88,10 +87,10 @@ int main(int argc, char *argv[]){
     //blacklist
     QObject::connect(interaction,      SIGNAL(list()),              displayMessage, SLOT(displayList()));
     QObject::connect(interaction,      &Interaction::addWord, [](QString word) {
-        stopWord.append(word);
+        stopWord.append(word.toLower());
     });
     QObject::connect(interaction,      &Interaction::deleteWord, [](QString word) {
-        stopWord.removeOne(word);
+        stopWord.removeOne(word.toLower());
     });
     //system messages
     QObject::connect(mainSearchEngine, SIGNAL(getMessage(QString)), displayMessage, SLOT(displayFunctionMessage(QString)));

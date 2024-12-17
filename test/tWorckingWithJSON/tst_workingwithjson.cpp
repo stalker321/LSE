@@ -5,6 +5,7 @@
 #include "qtestcase.h"
 
 QList<QString> stopWord;
+int numberOfResponses(2);
 
 class tWorkingWithJson : public QObject
 {
@@ -30,10 +31,10 @@ void tWorkingWithJson::hsitory() {
     tHistory.setSearchEmpty(true, "req1");
     tHistory.setSearchEmpty(false, "req2");
 
-    QMultiMap<double, int> result;
+    QMap<double, QVector<int>> result;
     tHistory.setRecordingResponses("req1", result);
-    result.insert(0.5, 1);
-    result.insert(1, 0);
+    result[0.5].append(1);
+    result[1].append(0);
     tHistory.setRecordingResponses("req2", result);
 //
     QVERIFY2(tHistory.getCollectHistory()["answer"]["req1"]["result"].toBool() == false
@@ -61,7 +62,7 @@ void tWorkingWithJson::request() {
 void tWorkingWithJson::sistemJson(){
     SistemJson tSistemJson;
     QString tPath("config.json");
-    QString tVersion("test0.0.1");
+    QString tVersion("test1.1.3");
     tSistemJson.setConfigCheck(tPath, tVersion);
     tSistemJson.setMaxResponsec(5);
     //

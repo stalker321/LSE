@@ -13,8 +13,11 @@
 #include <QByteArray>
 #include <QJsonObject>
 #include <QJsonDocument>
-// #include <QtConcurrent>
+
 #include "errormessage.h"
+
+// global variable
+extern int numberOfResponses;
 
 extern QList<QString> stopWord;
 
@@ -64,8 +67,9 @@ class History {
 public:
     void setSearchEmpty (bool empty, QString request);
     void setRecordingResponses (QString request,
-                               QMultiMap<double, int> result);
+                               QMap<double, QVector<int>> result);
     void write ();
+    QJsonDocument getAnswer (QString req);
 //get
     const QJsonObject &getCollectHistory() {
         return collectHistory;

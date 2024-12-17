@@ -37,6 +37,9 @@ If errors occurred during the execution of the program, their list can be viewed
 <br>Use new versions of **MinGW**, because an error may occur in older versions when working with std::filesystem.
 
 ## Update
+- v1.1.3-tests
+- - Updated tests;
+##
 - v1.1.3
 - - Improving work with threads;
 - - The blacklist is updated in lowercase;

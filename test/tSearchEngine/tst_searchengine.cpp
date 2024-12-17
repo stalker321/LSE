@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <qtestcase.h>
 
 // add necessary includes here
 #include "searchengine.h"
@@ -37,7 +38,7 @@ void tSearchEngine::tSearch() {
     QString emptyReq("t");
     tServer.createResponce(req, &tBase);
     tServer2.createResponce(emptyReq, &tBase);
-    QVERIFY2(tServer.getSearchResponse().toStdMultiMap().begin()->second == 2
+    QVERIFY2(tServer.getSearchResponse().toStdMap().begin()->second.back() == 2
              && tServer2.getSearchResponse().empty(), "Test search");
 }
 
@@ -50,8 +51,7 @@ void tSearchEngine::tMainSearchEngine() {
     QVERIFY2(tMainSearch.getSearchArchive()->getIndexBase()["test"].begin()->second == 2 && tMainSearch.getSearchArchive()->getIndexBase()["test2"][0].second == 1
                  && tMainSearch.getSearchArchive()->getIndexBase()["test2"][1].second == 2 && tMainSearch.getSearchArchive()->getIndexBase()["test1"][0].second == 0, "Test main base");
     QString req ("test");
-    tMainSearch.dataOutput(tMainSearch.getHistory(), tMainSearch.getSearchArchive(),
-    req, 0);
+    tMainSearch.beginningSearch(req, 0);
     QVERIFY2(tMainSearch.getHistory()->getCollectHistory()["answer"]["request0"]["relevance"][0]["docid"].toInt() == 2, "Test main search");
 }
 

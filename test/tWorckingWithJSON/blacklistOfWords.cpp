@@ -12,23 +12,23 @@ void BlacklistOfWords::setBlackList(QString& path){
     file.close();
 }
 
-// BlacklistOfWords::~BlacklistOfWords(){
-//     QJsonArray jsonArray;
-//     for (const auto& w : stopWord) {
-//         jsonArray.append(w);
-//     }
+BlacklistOfWords::~BlacklistOfWords(){
+    QJsonArray jsonArray;
+    for (const auto& w : stopWord) {
+        jsonArray.append(w);
+    }
 
-//     QJsonObject stopWords;
-//     stopWords["stop-word"] = jsonArray;
-//     blacklist.setObject(stopWords);
+    QJsonObject stopWords;
+    stopWords["stop-word"] = jsonArray;
+    blacklist.setObject(stopWords);
 
-//     QFile file(filePath);
-//     if (!file.open(QIODevice::WriteOnly)) {
-//         file.close();
-//         //error message
-//         errorLog("Error in the blacklist file", false);
-//     }
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        file.close();
+        //error message
+        errorLog("Error in the blacklist file", false);
+    }
 
-//     file.write(blacklist.toJson(QJsonDocument::Compact));
-//     file.close();
-// }
+    file.write(blacklist.toJson(QJsonDocument::Compact));
+    file.close();
+}

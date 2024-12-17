@@ -38,6 +38,7 @@ add_executable(searchEngine
           errormessage.h
           errormessage.cpp
           SearchEngine.h
+          wordIndexing.cpp
 )
 add_test(NAME searchEngine COMMAND searchEngine)
 

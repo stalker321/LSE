@@ -1,7 +1,10 @@
 {
   "config": {
-  "name": "tFinalProject",
-  "version": "test0.0.1",
-  "max_responses": 1
-  }
+  "name": "LSE",
+  "version": "test1.1.3",
+  "max_responses": 5
+  },
+  "files": [
+          "./resources"
+  ]
 }

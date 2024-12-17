@@ -18,13 +18,14 @@ void dataOutput (History* staticHistory, DocumentBase* staticSearchArchive,
     delete(searchServer);
 }
 
-void MainSearchEngine::addBase(QString path, QList<QString>& format, DocumentBase* searchArchive) {
-    searchArchive->setBase(path, format);
-}
 
 //search engine
 MainSearchEngine::MainSearchEngine (QList<QString>& path, QList<QString>& format)  {
     searchArchive = new DocumentBase(path, format);
+}
+
+void MainSearchEngine::addBase(QString path, QList<QString>& format, DocumentBase* searchArchive) {
+    searchArchive->setBase(path, format);
 }
 
 void MainSearchEngine::writeHistory () {
